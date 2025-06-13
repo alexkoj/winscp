@@ -126,7 +126,7 @@ int BIO_free(BIO *a)
     if (CRYPTO_DOWN_REF(&a->references, &ret) <= 0)
         return 0;
 
-    REF_PRINT_COUNT("BIO", a);
+    REF_PRINT_COUNT("BIO", ret, a);
     if (ret > 0)
         return 1;
     REF_ASSERT_ISNT(ret < 0);
@@ -191,7 +191,7 @@ int BIO_up_ref(BIO *a)
     if (CRYPTO_UP_REF(&a->references, &i) <= 0)
         return 0;
 
-    REF_PRINT_COUNT("BIO", a);
+    REF_PRINT_COUNT("BIO", i, a);
     REF_ASSERT_ISNT(i < 2);
     return i > 1;
 }
@@ -817,7 +817,7 @@ BIO *BIO_find_type(BIO *bio, int type)
         ERR_raise(ERR_LIB_BIO, ERR_R_PASSED_NULL_PARAMETER);
         return NULL;
     }
-    mask = type & 0xff;
+    mask = type & BIO_TYPE_MASK;
     do {
         if (bio->method != NULL) {
             mt = bio->method->type;

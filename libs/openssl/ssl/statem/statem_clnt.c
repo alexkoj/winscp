@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2023 The OpenSSL Project Authors. All Rights Reserved.
+ * Copyright 1995-2025 The OpenSSL Project Authors. All Rights Reserved.
  * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved
  * Copyright 2005 Nokia. All rights reserved.
  *
@@ -871,20 +871,16 @@ WORK_STATE ossl_statem_client_post_work(SSL_CONNECTION *s, WORK_STATE wst)
             return WORK_ERROR;
         }
 
-        if (SSL_CONNECTION_IS_DTLS(s)) {
 #ifndef OPENSSL_NO_SCTP
-            if (s->hit) {
-                /*
-                 * Change to new shared key of SCTP-Auth, will be ignored if
-                 * no SCTP used.
-                 */
-                BIO_ctrl(SSL_get_wbio(ssl), BIO_CTRL_DGRAM_SCTP_NEXT_AUTH_KEY,
-                         0, NULL);
-            }
-#endif
-
-            dtls1_increment_epoch(s, SSL3_CC_WRITE);
+        if (SSL_CONNECTION_IS_DTLS(s) && s->hit) {
+            /*
+            * Change to new shared key of SCTP-Auth, will be ignored if
+            * no SCTP used.
+            */
+            BIO_ctrl(SSL_get_wbio(ssl), BIO_CTRL_DGRAM_SCTP_NEXT_AUTH_KEY,
+                     0, NULL);
         }
+#endif
         break;
 
     case TLS_ST_CW_FINISHED:
@@ -1427,6 +1423,10 @@ static int set_client_ciphersuite(SSL_CONNECTION *s,
         if (SSL_CONNECTION_IS_TLS13(s)) {
             const EVP_MD *md = ssl_md(sctx, c->algorithm2);
 
+            if (!ossl_assert(s->session->cipher != NULL)) {
+                SSLfatal(s, SSL_AD_INTERNAL_ERROR, ERR_R_INTERNAL_ERROR);
+                return 0;
+            }
             /*
              * In TLSv1.3 it is valid for the server to select a different
              * ciphersuite as long as the hash is the same.
@@ -1463,6 +1463,7 @@ MSG_PROCESS_RETURN tls_process_server_hello(SSL_CONNECTION *s, PACKET *pkt)
     unsigned int context;
     RAW_EXTENSION *extensions = NULL;
     SSL *ssl = SSL_CONNECTION_GET_SSL(s);
+    SSL *ussl = SSL_CONNECTION_GET_USER_SSL(s);
 #ifndef OPENSSL_NO_COMP
     SSL_COMP *comp;
 #endif
@@ -1623,7 +1624,7 @@ MSG_PROCESS_RETURN tls_process_server_hello(SSL_CONNECTION *s, PACKET *pkt)
             int master_key_length;
 
             master_key_length = sizeof(s->session->master_key);
-            if (s->ext.session_secret_cb(ssl, s->session->master_key,
+            if (s->ext.session_secret_cb(ussl, s->session->master_key,
                                          &master_key_length,
                                          NULL, &pref_cipher,
                                          s->ext.session_secret_cb_arg)
@@ -1908,6 +1909,7 @@ static WORK_STATE tls_post_process_server_rpk(SSL_CONNECTION *sc,
 {
     size_t certidx;
     const SSL_CERT_LOOKUP *clu;
+    int v_ok;
 
     if (sc->session->peer_rpk == NULL) {
         SSLfatal(sc, SSL_AD_ILLEGAL_PARAMETER,
@@ -1917,9 +1919,19 @@ static WORK_STATE tls_post_process_server_rpk(SSL_CONNECTION *sc,
 
     if (sc->rwstate == SSL_RETRY_VERIFY)
         sc->rwstate = SSL_NOTHING;
-    if (ssl_verify_rpk(sc, sc->session->peer_rpk) > 0
-            && sc->rwstate == SSL_RETRY_VERIFY)
+
+    ERR_set_mark();
+    v_ok = ssl_verify_rpk(sc, sc->session->peer_rpk);
+    if (v_ok <= 0 && sc->verify_mode != SSL_VERIFY_NONE) {
+        ERR_clear_last_mark();
+        SSLfatal(sc, ssl_x509err2alert(sc->verify_result),
+                 SSL_R_CERTIFICATE_VERIFY_FAILED);
+        return WORK_ERROR;
+    }
+    ERR_pop_to_mark();      /* but we keep s->verify_result */
+    if (v_ok > 0 && sc->rwstate == SSL_RETRY_VERIFY) {
         return WORK_MORE_A;
+    }
 
     if ((clu = ssl_cert_lookup_by_pkey(sc->session->peer_rpk, &certidx,
                                        SSL_CONNECTION_GET_CTX(sc))) == NULL) {
@@ -2069,10 +2081,7 @@ WORK_STATE tls_post_process_server_certificate(SSL_CONNECTION *s,
 
     if (s->rwstate == SSL_RETRY_VERIFY)
         s->rwstate = SSL_NOTHING;
-    i = ssl_verify_cert_chain(s, s->session->peer_chain);
-    if (i > 0 && s->rwstate == SSL_RETRY_VERIFY) {
-        return WORK_MORE_A;
-    }
+
     /*
      * The documented interface is that SSL_VERIFY_PEER should be set in order
      * for client side verification of the server certificate to take place.
@@ -2087,12 +2096,17 @@ WORK_STATE tls_post_process_server_certificate(SSL_CONNECTION *s,
      * (less clean) historic behaviour of performing validation if any flag is
      * set. The *documented* interface remains the same.
      */
-    if (s->verify_mode != SSL_VERIFY_NONE && i <= 0) {
+    ERR_set_mark();
+    i = ssl_verify_cert_chain(s, s->session->peer_chain);
+    if (i <= 0 && s->verify_mode != SSL_VERIFY_NONE) {
+        ERR_clear_last_mark();
         SSLfatal(s, ssl_x509err2alert(s->verify_result),
                  SSL_R_CERTIFICATE_VERIFY_FAILED);
         return WORK_ERROR;
     }
-    ERR_clear_error();          /* but we keep s->verify_result */
+    ERR_pop_to_mark();      /* but we keep s->verify_result */
+    if (i > 0 && s->rwstate == SSL_RETRY_VERIFY)
+        return WORK_MORE_A;
 
     /*
      * Inconsistency alert: cert_chain does include the peer's certificate,
@@ -2929,7 +2943,7 @@ int tls_process_initial_server_flight(SSL_CONNECTION *s)
      */
     if (s->ext.status_type != TLSEXT_STATUSTYPE_nothing
             && sctx->ext.status_cb != NULL) {
-        int ret = sctx->ext.status_cb(SSL_CONNECTION_GET_SSL(s),
+        int ret = sctx->ext.status_cb(SSL_CONNECTION_GET_USER_SSL(s),
                                       sctx->ext.status_arg);
 
         if (ret == 0) {
@@ -3003,7 +3017,7 @@ static int tls_construct_cke_psk_preamble(SSL_CONNECTION *s, WPACKET *pkt)
 
     memset(identity, 0, sizeof(identity));
 
-    psklen = s->psk_client_callback(SSL_CONNECTION_GET_SSL(s),
+    psklen = s->psk_client_callback(SSL_CONNECTION_GET_USER_SSL(s),
                                     s->session->psk_identity_hint,
                                     identity, sizeof(identity) - 1,
                                     psk, sizeof(psk));
@@ -4054,7 +4068,7 @@ int ssl_do_client_cert_cb(SSL_CONNECTION *s, X509 **px509, EVP_PKEY **ppkey)
     }
 #endif
     if (sctx->client_cert_cb)
-        i = sctx->client_cert_cb(SSL_CONNECTION_GET_SSL(s), px509, ppkey);
+        i = sctx->client_cert_cb(SSL_CONNECTION_GET_USER_SSL(s), px509, ppkey);
     return i;
 }
 
@@ -4115,15 +4129,12 @@ int ssl_cipher_list_to_bytes(SSL_CONNECTION *s, STACK_OF(SSL_CIPHER) *sk,
 
         /* Sanity check that the maximum version we offer has ciphers enabled */
         if (!maxverok) {
-            if (SSL_CONNECTION_IS_DTLS(s)) {
-                if (DTLS_VERSION_GE(c->max_dtls, s->s3.tmp.max_ver)
-                        && DTLS_VERSION_LE(c->min_dtls, s->s3.tmp.max_ver))
-                    maxverok = 1;
-            } else {
-                if (c->max_tls >= s->s3.tmp.max_ver
-                        && c->min_tls <= s->s3.tmp.max_ver)
-                    maxverok = 1;
-            }
+            int minproto = SSL_CONNECTION_IS_DTLS(s) ? c->min_dtls : c->min_tls;
+            int maxproto = SSL_CONNECTION_IS_DTLS(s) ? c->max_dtls : c->max_tls;
+
+            if (ssl_version_cmp(s, maxproto, s->s3.tmp.max_ver) >= 0
+                    && ssl_version_cmp(s, minproto, s->s3.tmp.max_ver) <= 0)
+                maxverok = 1;
         }
 
         totlen += len;
@@ -4142,7 +4153,7 @@ int ssl_cipher_list_to_bytes(SSL_CONNECTION *s, STACK_OF(SSL_CIPHER) *sk,
 
     if (totlen != 0) {
         if (empty_reneg_info_scsv) {
-            static SSL_CIPHER scsv = {
+            static const SSL_CIPHER scsv = {
                 0, NULL, NULL, SSL3_CK_SCSV, 0, 0, 0, 0, 0, 0, 0, 0, 0
             };
             if (!ssl->method->put_cipher_by_char(&scsv, pkt, &len)) {
@@ -4151,7 +4162,7 @@ int ssl_cipher_list_to_bytes(SSL_CONNECTION *s, STACK_OF(SSL_CIPHER) *sk,
             }
         }
         if (s->mode & SSL_MODE_SEND_FALLBACK_SCSV) {
-            static SSL_CIPHER scsv = {
+            static const SSL_CIPHER scsv = {
                 0, NULL, NULL, SSL3_CK_FALLBACK_SCSV, 0, 0, 0, 0, 0, 0, 0, 0, 0
             };
             if (!ssl->method->put_cipher_by_char(&scsv, pkt, &len)) {

@@ -41,7 +41,6 @@ int RECORD_LAYER_clear(RECORD_LAYER *rl)
     rl->handshake_fragment_len = 0;
     rl->wpend_tot = 0;
     rl->wpend_type = 0;
-    rl->wpend_ret = 0;
     rl->wpend_buf = NULL;
     rl->alert_count = 0;
     rl->num_recs = 0;
@@ -180,7 +179,7 @@ size_t ssl3_pending(const SSL *s)
         TLS_RECORD *rdata;
         pitem *item, *iter;
 
-        iter = pqueue_iterator(sc->rlayer.d->buffered_app_data.q);
+        iter = pqueue_iterator(sc->rlayer.d->buffered_app_data);
         while ((item = pqueue_next(&iter)) != NULL) {
             rdata = item->data;
             num += rdata->length;
@@ -354,7 +353,6 @@ int ssl3_write_bytes(SSL *ssl, uint8_t type, const void *buf_, size_t len,
         s->rlayer.wpend_tot = 0;
         s->rlayer.wpend_type = type;
         s->rlayer.wpend_buf = buf;
-        s->rlayer.wpend_ret = len;
     }
 
     if (tot == len) {           /* done? */
@@ -1130,7 +1128,7 @@ static void rlayer_msg_callback_wrapper(int write_p, int version,
                                         size_t len, void *cbarg)
 {
     SSL_CONNECTION *s = cbarg;
-    SSL *ssl = SSL_CONNECTION_GET_SSL(s);
+    SSL *ssl = SSL_CONNECTION_GET_USER_SSL(s);
 
     if (s->msg_callback != NULL)
         s->msg_callback(write_p, version, content_type, buf, len, ssl,
@@ -1150,7 +1148,7 @@ static OSSL_FUNC_rlayer_padding_fn rlayer_padding_wrapper;
 static size_t rlayer_padding_wrapper(void *cbarg, int type, size_t len)
 {
     SSL_CONNECTION *s = cbarg;
-    SSL *ssl = SSL_CONNECTION_GET_SSL(s);
+    SSL *ssl = SSL_CONNECTION_GET_USER_SSL(s);
 
     return s->rlayer.record_padding_cb(ssl, type, len,
                                        s->rlayer.record_padding_arg);
@@ -1368,7 +1366,7 @@ int ssl_set_new_record_layer(SSL_CONNECTION *s, int version,
             prev = s->rlayer.rrlnext;
             if (SSL_CONNECTION_IS_DTLS(s)
                     && level != OSSL_RECORD_PROTECTION_LEVEL_NONE)
-                epoch =  DTLS_RECORD_LAYER_get_r_epoch(&s->rlayer) + 1; /* new epoch */
+                epoch = dtls1_get_epoch(s, SSL3_CC_READ); /* new epoch */
 
 #ifndef OPENSSL_NO_DGRAM
             if (SSL_CONNECTION_IS_DTLS(s))
@@ -1385,7 +1383,7 @@ int ssl_set_new_record_layer(SSL_CONNECTION *s, int version,
         } else {
             if (SSL_CONNECTION_IS_DTLS(s)
                     && level != OSSL_RECORD_PROTECTION_LEVEL_NONE)
-                epoch =  DTLS_RECORD_LAYER_get_w_epoch(&s->rlayer) + 1; /* new epoch */
+                epoch = dtls1_get_epoch(s, SSL3_CC_WRITE); /* new epoch */
         }
 
         /*
