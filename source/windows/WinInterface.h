@@ -96,6 +96,13 @@ TCustomScpExplorerForm * __fastcall CreateScpExplorer();
 
 UnicodeString GetThemeName(bool Dark);
 void __fastcall ConfigureInterface();
+// Asks the user how to deal with a color mode change that needs a restart to apply the
+// VCL Style. Returns false when the user cancelled, i.e. the caller has to revert the
+// setting it has just applied.
+bool ConfirmColorModeRestart();
+// Relaunches the application if ConfirmColorModeRestart() was answered with "restart
+// now". Call once, as the very last thing the process does.
+void RestartApplicationIfRequested();
 
 void __fastcall DoProductLicense();
 

@@ -30,6 +30,7 @@ __fastcall TRemoteTransferDialog::TRemoteTransferDialog(TComponent * Owner)
   : TForm(Owner)
 {
   UseSystemSettings(this);
+  ApplyColorMode(this);
 
   Caption = LoadStr(REMOTE_COPY_TITLE);
 }

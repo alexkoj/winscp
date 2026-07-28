@@ -11,6 +11,7 @@
 #include <CustomWinConfiguration.h>
 #include "ThemePageControl.h"
 #include <algorithm>
+#include <Vcl.Themes.hpp>
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
 //---------------------------------------------------------------------------
@@ -18,6 +19,32 @@
 // https://web.archive.org/web/20250809094534/https://www.codeproject.com/Articles/6355/XP-Themes-Tab-Control-in-any-orientation
 //---------------------------------------------------------------------------
 #define IDS_UTIL_TAB            L"TAB"
+//---------------------------------------------------------------------------
+// UseThemes() alone checks only the native/classic UxTheme state, which predates
+// VCL Styles and can be false (e.g. missing manifest on some build configs, or a
+// system with visual styles off) even while a VCL Style is fully active and doing
+// its own owner-draw painting. Either being true means we are "themed" enough for
+// TThemePageControl's custom paint (including the tab close ("x") button) to make
+// sense; without this OR, the close button (and the caption padding reserving
+// space for it) could silently disappear completely, not just look small/faint.
+static bool IsPageControlThemed()
+{
+  return
+    UseThemes() ||
+    ((Vcl::Themes::TStyleManager::ActiveStyle != NULL) &&
+     !SameText(Vcl::Themes::TStyleManager::ActiveStyle->Name, L"Windows"));
+}
+// Note on why the tab close ("x") button is painted from WndProc (see DrawTabButtons)
+// and not from PaintWindow: Vcl.ComCtrls registers TTabControlStyleHook for
+// TCustomTabControl, and with a VCL Style active that hook sets OverridePaint and paints
+// the whole control straight from WM_PAINT - so PaintWindow below is never called at
+// all. The tabs still look properly themed (the hook draws them), which masks the real
+// symptom: the close button is not painted, while its hit area and click handling
+// (WM_LBUTTONDOWN, routed through Dispatch, untouched by the hook) keep working.
+//
+// Opting the control out of the style hook (registering a pass-through TStyleHook for
+// this class, csOverrideStylePaint, trimming StyleElements) was tried and did NOT bring
+// the button back, so it was removed again rather than left in as dead risk.
 //---------------------------------------------------------------------------
 __fastcall TThemeTabSheet::TThemeTabSheet(TComponent * Owner) :
   TTabSheet(Owner)
@@ -107,7 +134,7 @@ void TThemeTabSheet::UpdateCaption()
 
   TThemePageControl * ParentPageControl = GetParentPageControl();
 
-  if (UseThemes() && (Button != ttbNone))
+  if (IsPageControlThemed() && (Button != ttbNone))
   {
     ParentPageControl->Canvas->Font = ParentPageControl->Font;
     int OrigWidth = ParentPageControl->Canvas->TextWidth(ACaption);
@@ -151,6 +178,7 @@ __fastcall TThemePageControl::TThemePageControl(TComponent * Owner) :
   FTabTheme = NULL;
   FActiveTabTheme = NULL;
   FTextHeight = -1;
+
 }
 //----------------------------------------------------------------------------------------------------------
 int __fastcall TThemePageControl::GetTabsHeight()
@@ -183,8 +211,15 @@ int __fastcall TThemePageControl::GetTabsHeight()
 //----------------------------------------------------------------------------------------------------------
 void __fastcall TThemePageControl::PaintWindow(HDC DC)
 {
-  // Themes not enabled, give up
-  if (!UseThemes())
+  // Themes not enabled, give up. This used to check only UseThemes() (native/
+  // classic UxTheme), which can be false even while a VCL Style is fully active.
+  // When that happened, ALL of this control's custom painting - including the
+  // tab close ("x") button - was skipped entirely in favour of the stock
+  // TPageControl::PaintWindow, which VCL Styles then re-skins transparently via
+  // its own generic TPageControl style hook (which is why the tabs still looked
+  // themed/colored - just not via this class's code at all, so none of the fixes
+  // made to DrawTabItem/GetTabButton/UpdateCaption here had any effect).
+  if (!IsPageControlThemed())
   {
     TPageControl::PaintWindow(DC);
     return;
@@ -231,7 +266,7 @@ void __fastcall TThemePageControl::PaintWindow(HDC DC)
 TThemeTabSheetButtons __fastcall TThemePageControl::GetTabButton(int Index)
 {
   TThemeTabSheet * ThemeTabSheet = dynamic_cast<TThemeTabSheet *>(Pages[Index]);
-  return (UseThemes() && (ThemeTabSheet != NULL)) ? ThemeTabSheet->Button : ttbNone;
+  return (IsPageControlThemed() && (ThemeTabSheet != NULL)) ? ThemeTabSheet->Button : ttbNone;
 }
 //----------------------------------------------------------------------------------------------------------
 void __fastcall TThemePageControl::DrawThemesXpTab(HDC DC, HTHEME Theme, int Tab)
@@ -325,21 +360,6 @@ bool __fastcall TThemePageControl::HasItemImage(int Item)
   return (Images != NULL) && (Pages[Item]->ImageIndex >= 0);
 }
 //----------------------------------------------------------------------------------------------------------
-void TThemePageControl::DrawCross(HDC DC, int Width, COLORREF Color, const TRect & Rect)
-{
-  HPEN Pen = CreatePen(PS_SOLID, Width, Color);
-  HPEN OldPen = static_cast<HPEN>(SelectObject(DC, Pen));
-  // To-and-back - to make both ends look the same
-  MoveToEx(DC, Rect.Left, Rect.Bottom - 1, NULL);
-  LineTo(DC, Rect.Right - 1, Rect.Top);
-  LineTo(DC, Rect.Left, Rect.Bottom - 1);
-  MoveToEx(DC, Rect.Left, Rect.Top, NULL);
-  LineTo(DC, Rect.Right - 1, Rect.Bottom - 1);
-  LineTo(DC, Rect.Left, Rect.Top);
-  SelectObject(DC, OldPen);
-  DeleteObject(Pen);
-}
-//----------------------------------------------------------------------------------------------------------
 void TThemePageControl::DrawDropDown(HDC DC, int Radius, int X, int Y, COLORREF Color, int Grow)
 {
   // Optimized for even-sized Rect (100% scaling), may need adjustments for even-sized to correctly center
@@ -356,6 +376,14 @@ void TThemePageControl::DrawDropDown(HDC DC, int Radius, int X, int Y, COLORREF 
   SelectObject(DC, OldBrush);
   DeleteObject(Brush);
   DeleteObject(Pen);
+}
+//----------------------------------------------------------------------------------------------------------
+static int Luminance(COLORREF Color)
+{
+  return
+    ((299 * static_cast<int>(GetRValue(Color))) +
+     (587 * static_cast<int>(GetGValue(Color))) +
+     (114 * static_cast<int>(GetBValue(Color)))) / 1000;
 }
 //----------------------------------------------------------------------------------------------------------
 static int VCenter(const TRect & Rect, int Height)
@@ -392,13 +420,14 @@ void __fastcall TThemePageControl::DrawTabItem(HDC DC, int Item, TRect Rect, int
   }
 
   int OldMode = SetBkMode(DC, TRANSPARENT);
+  HGDIOBJ OldFont = SelectObject(DC, Font->Handle);
+
   if (!Text.IsEmpty())
   {
     if (ATabTheme != NULL)
     {
       SetTextColor(DC, static_cast<COLORREF>(ATabTheme->GetItemTextColor(GetItemInfo(State))));
     }
-    HGDIOBJ OldFont = SelectObject(DC, Font->Handle);
     wchar_t * Buf = new wchar_t[static_cast<size_t>(Text.Length() + 1 + 4)];
     wcscpy(Buf, Text.c_str());
     TRect TextRect(0, 0, Rect.Width(), 20);
@@ -409,71 +438,170 @@ void __fastcall TThemePageControl::DrawTabItem(HDC DC, int Item, TRect Rect, int
     Rect.Top = VCenter(Rect, FTextHeight);
     DrawText(DC, Buf, -1, &Rect, DT_NOPREFIX | DT_CENTER);
     delete[] Buf;
+  }
 
-    TThemeTabSheetButtons Button = GetTabButton(Item);
-    if (Button != ttbNone)
+  SelectObject(DC, OldFont);
+  SetBkMode(DC, OldMode);
+  // The tab button is deliberately NOT painted from here: DrawTabButtons (called from
+  // WndProc) is the single place that does it, because this method does not run at all
+  // when a VCL Style hook owns WM_PAINT. Painting it in both places made the button
+  // sample its own glyph as "background color" and invert itself into invisibility.
+}
+//----------------------------------------------------------------------------------------------------------
+void __fastcall TThemePageControl::DrawTabButton(HDC DC, TCanvas * Canvas, int Item, int State)
+{
+  TThemeTabSheetButtons Button = GetTabButton(Item);
+  if (Button != ttbNone)
+  {
+    TRect ButtonRect = TabButtonRect(Item);
+
+    TTBXItemInfo ButtonItemInfo = GetItemInfo(State);
+
+    // CurrentTheme is TBX's own global for the theme in use, so it is always the live
+    // one. Deliberately NOT TabTheme/ActiveTabTheme: those are cached pointers owned by
+    // whoever set them, and this code runs on every WM_PAINT - including the paints that
+    // happen between TBXSetTheme() freeing the old theme object and UpdateControls()
+    // assigning the new one. Dereferencing the stale pointer there took the whole app
+    // down on every Dark/Light switch.
+    if (IsHotButton(Item) && (CurrentTheme != NULL))
     {
-      Rect = TabButtonRect(Item);
+      ButtonItemInfo.HoverKind = hkMouseHover;
 
-      TTBXItemInfo ButtonItemInfo = GetItemInfo(State);
-
-      if (IsHotButton(Item))
-      {
-        ButtonItemInfo.HoverKind = hkMouseHover;
-
-        CurrentTheme->PaintFrame(Canvas.get(), Rect, ButtonItemInfo);
-      }
-
-      COLORREF BackColor = GetPixel(DC, Rect.Left + (Rect.Width() / 2), Rect.Top + (Rect.Height() / 2));
-      COLORREF ShapeColor;
-      if (ATabTheme != NULL)
-      {
-        ShapeColor = static_cast<COLORREF>(ColorToRGB(ATabTheme->GetItemTextColor(ButtonItemInfo)));
-      }
-      else
-      {
-        ShapeColor = static_cast<COLORREF>(ColorToRGB(Font->Color));
-      }
-      #define BlendValue(FN) (((4 * static_cast<int>(FN(BackColor))) + static_cast<int>(FN(ShapeColor))) / 5)
-      COLORREF BlendColor = RGB(BlendValue(GetRValue), BlendValue(GetGValue), BlendValue(GetBValue));
-      #undef BlendValue
-
-      if (Button == ttbClose)
-      {
-        int CrossPadding = GetCrossPadding();
-
-        TRect CrossRect(Rect);
-        CrossRect.Inflate(-CrossPadding, -CrossPadding);
-
-        int CrossWidth = ScaleByTextHeight(this, 1);
-        DrawCross(DC, CrossWidth + 1, BlendColor, CrossRect);
-        DrawCross(DC, CrossWidth, ShapeColor, CrossRect);
-      }
-      else if (DebugAlwaysTrue(Button == ttbDropDown))
-      {
-        // See TTBXOfficeXPTheme.PaintDropDownArrow
-        int Radius = ScaleByTextHeight(this, 2);
-        int X = ((Rect.Left + Rect.Right)) / 2;
-        int Y = ((Rect.Top + Rect.Bottom) / 2) - (Radius * 2 / 3);
-        DrawDropDown(DC, Radius, X, Y, BlendColor, 1);
-        DrawDropDown(DC, Radius, X, Y, ShapeColor, 0);
-      }
+      CurrentTheme->PaintFrame(Canvas, ButtonRect, ButtonItemInfo);
     }
 
-    SelectObject(DC, OldFont);
+    // How far the glyph is kept away from the button edges. Also decides where the
+    // background is sampled below, so it is needed for both button kinds.
+    int Inset = std::max((ButtonRect.Width() * 3) / 10, 3);
+
+    // Sampled to the LEFT of the glyph, never at the centre of the button: this runs as
+    // an overlay over an already painted window, so the centre may still hold the cross
+    // drawn by the previous paint. Reading that back as "the background" would flip the
+    // glyph to the background color - the button then alternates between visible and
+    // invisible from one repaint to the next.
+    COLORREF BackColor =
+      GetPixel(DC, ButtonRect.Left + (Inset / 2), ButtonRect.Top + (ButtonRect.Height() / 2));
+
+    // Derived from the background actually on screen rather than from a theme color:
+    // this overlay has no reliable way of knowing which engine painted the tab, and a
+    // theme text color that happens to sit close to the tab background renders the
+    // button invisible. GetPixel returns CLR_INVALID outside the clipping region, in
+    // which case the control's own font color is the best available guess.
+    COLORREF ShapeColor;
+    if (BackColor == CLR_INVALID)
+    {
+      ShapeColor = static_cast<COLORREF>(ColorToRGB(Font->Color));
+    }
+    else
+    {
+      ShapeColor = (Luminance(BackColor) < 128) ? RGB(0xF0, 0xF0, 0xF0) : RGB(0x30, 0x30, 0x30);
+    }
+    #define BlendValue(FN) (((4 * static_cast<int>(FN(BackColor))) + static_cast<int>(FN(ShapeColor))) / 5)
+    COLORREF BlendColor =
+      (BackColor == CLR_INVALID) ? ShapeColor : RGB(BlendValue(GetRValue), BlendValue(GetGValue), BlendValue(GetBValue));
+    #undef BlendValue
+
+    if (Button == ttbClose)
+    {
+      // Drawn as plain GDI lines, not as a font glyph: this runs over whatever painted
+      // the tab (see DrawTabButtons), so it must not depend on the font selected into
+      // the DC, on that font actually having the glyph, or on the background mode.
+      COLORREF CrossColor = ShapeColor;
+      int Thickness = std::max(ScaleByTextHeight(this, 1), 1);
+      TRect CrossRect(ButtonRect);
+      CrossRect.Inflate(-Inset, -Inset);
+
+      HPEN Pen = CreatePen(PS_SOLID, Thickness, CrossColor);
+      HGDIOBJ OldPen = SelectObject(DC, Pen);
+      MoveToEx(DC, CrossRect.Left, CrossRect.Top, NULL);
+      LineTo(DC, CrossRect.Right, CrossRect.Bottom);
+      MoveToEx(DC, CrossRect.Right - 1, CrossRect.Top, NULL);
+      LineTo(DC, CrossRect.Left - 1, CrossRect.Bottom);
+      SelectObject(DC, OldPen);
+      DeleteObject(Pen);
+    }
+    else if (DebugAlwaysTrue(Button == ttbDropDown))
+    {
+      // See TTBXOfficeXPTheme.PaintDropDownArrow
+      int Radius = ScaleByTextHeight(this, 2);
+      int X = ((ButtonRect.Left + ButtonRect.Right)) / 2;
+      int Y = ((ButtonRect.Top + ButtonRect.Bottom) / 2) - (Radius * 2 / 3);
+      DrawDropDown(DC, Radius, X, Y, BlendColor, 1);
+      DrawDropDown(DC, Radius, X, Y, ShapeColor, 0);
+    }
+  }
+}
+//----------------------------------------------------------------------------------------------------------
+// Draws the tab buttons over whatever painted the control - our own PaintWindow, the
+// stock TPageControl painting, or the VCL Style's TTabControlStyleHook. Which of those
+// three runs depends on VCL internals we do not control (the style hook sets
+// OverridePaint and swallows WM_PAINT before PaintWindow is ever reached), and that is
+// precisely why the close button used to be invisible while its click handling - which
+// goes through Dispatch/WM_LBUTTONDOWN, untouched by any hook - kept working.
+// Painting it from WndProc, after the message has been fully handled, is independent of
+// all of that. The caption already reserves the space for it (see UpdateCaption).
+void __fastcall TThemePageControl::DrawTabButtons(HDC DC)
+{
+  std::unique_ptr<TCanvas> Canvas(new TCanvas());
+  Canvas->Handle = DC;
+  Canvas->Font = Font;
+
+  int OldMode = SetBkMode(DC, TRANSPARENT);
+
+  TPoint Point = ScreenToClient(Mouse->CursorPos);
+  int HotIndex = IndexOfTabAt(Point.X, Point.Y);
+
+  for (int Item = 0; Item < PageCount; Item++)
+  {
+    int State;
+    if (Item != TabIndex)
+    {
+      State = (Item == HotIndex) ? TIS_HOT : TIS_NORMAL;
+    }
+    else
+    {
+      State = TIS_SELECTED;
+    }
+
+    DrawTabButton(DC, Canvas.get(), Item, State);
   }
 
   SetBkMode(DC, OldMode);
 }
 //----------------------------------------------------------------------------------------------------------
-int __fastcall TThemePageControl::TabButtonSize()
+void __fastcall TThemePageControl::WndProc(TMessage & Message)
 {
-  return MulDiv(GetTabsHeight(), 8, 13);
+  TPageControl::WndProc(Message);
+
+  if ((Message.Msg == WM_PAINT) &&
+      HandleAllocated() &&
+      !ComponentState.Contains(csDestroying) &&
+      !ControlState.Contains(csDestroyingHandle) &&
+      (PageCount > 0))
+  {
+    // GetDC() would be GetDCEx(..., DCX_USESTYLE), and TWinControl creates its window
+    // with WS_CLIPCHILDREN, so the returned DC would have the child tab sheet clipped
+    // out - GetPixel then fails (CLR_INVALID) and drawing can be silently discarded.
+    // Asking for the plain cached DC keeps the whole client area writable.
+    HDC DC = GetDCEx(Handle, NULL, DCX_CACHE);
+    if (DC != NULL)
+    {
+      try
+      {
+        DrawTabButtons(DC);
+      }
+      __finally
+      {
+        ReleaseDC(Handle, DC);
+      }
+    }
+  }
 }
 //----------------------------------------------------------------------------------------------------------
-int __fastcall TThemePageControl::GetCrossPadding()
+int __fastcall TThemePageControl::TabButtonSize()
 {
-  return MulDiv(GetTabsHeight(), 2, 13);
+  // Was 8/13: made the tab close ("x") button too small/hard to notice.
+  return MulDiv(GetTabsHeight(), 10, 13);
 }
 //----------------------------------------------------------------------------------------------------------
 TRect __fastcall TThemePageControl::TabButtonRect(int Index)
@@ -572,7 +700,7 @@ void __fastcall TThemePageControl::Change()
 {
   // note that TabIndex yields correct value already here,
   // while ActivePageIndex is not updated yet
-  if ((FOldTabIndex >= 0) && (FOldTabIndex != TabIndex) && UseThemes())
+  if ((FOldTabIndex >= 0) && (FOldTabIndex != TabIndex) && IsPageControlThemed())
   {
     InvalidateTab(FOldTabIndex);
   }

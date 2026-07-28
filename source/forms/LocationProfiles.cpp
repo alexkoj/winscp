@@ -187,6 +187,7 @@ __fastcall TLocationProfilesDialog::TLocationProfilesDialog(TComponent * AOwner)
   FSharedScrollOnDragOver = new TTreeViewScrollOnDragOver(SharedProfilesView, true);
 
   UseSystemSettings(this);
+  ApplyColorMode(this);
   SelectScaledImageList(BookmarkImageList);
   SessionProfilesView->Images = TreeViewImageList(BookmarkImageList);
   LoadDialogImage(Image, L"Open folder");

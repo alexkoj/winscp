@@ -18,17 +18,17 @@
 //---------------------------------------------------------------------------
 bool __fastcall DoSiteAdvancedDialog(TSessionData * SessionData)
 {
-  TSiteAdvancedDialog * SiteAdvancedDialog = new TSiteAdvancedDialog(Application);
-  bool Result;
-  try
+  // Reused across calls (never deleted, Application owns it) instead of being
+  // created/destroyed on every "Advanced..." click. This is a large dialog (many
+  // tab sheets/controls), so re-streaming it from its DFM and re-walking it for
+  // dark mode (ApplyColorMode) each time was the main cost of opening it from
+  // the Login form; keeping the instance alive skips all of that on repeat opens.
+  static TSiteAdvancedDialog * SiteAdvancedDialog = NULL;
+  if (SiteAdvancedDialog == NULL)
   {
-    Result = SiteAdvancedDialog->Execute(SessionData);
+    SiteAdvancedDialog = new TSiteAdvancedDialog(Application);
   }
-  __finally
-  {
-    delete SiteAdvancedDialog;
-  }
-  return Result;
+  return SiteAdvancedDialog->Execute(SessionData);
 }
 //---------------------------------------------------------------------
 static const UnicodeString DefaultRecycleBinPath = L"/tmp";
@@ -42,6 +42,7 @@ __fastcall TSiteAdvancedDialog::TSiteAdvancedDialog(TComponent * AOwner) :
   // we need to make sure that window procedure is set asap
   // (so that CM_SHOWINGCHANGED handling is applied)
   UseSystemSettings(this);
+  ApplyColorMode(this);
   InitControls();
   PageControl->ActivePage = EnvironmentSheet;
 }

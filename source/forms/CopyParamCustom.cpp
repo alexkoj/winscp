@@ -30,6 +30,7 @@ __fastcall TCopyParamCustomDialog::TCopyParamCustomDialog(TComponent * Owner,
   : TForm(Owner)
 {
   UseSystemSettings(this);
+  ApplyColorMode(this);
   CopyParamsFrame->CopyParamAttrs = CopyParamAttrs;
 }
 //---------------------------------------------------------------------------

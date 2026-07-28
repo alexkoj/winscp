@@ -31,6 +31,7 @@ __fastcall TEditorPreferencesDialog::TEditorPreferencesDialog(
 {
   SetCorrectFormParent(this);
   UseSystemSettings(this);
+  ApplyColorMode(this);
 
   UnicodeString ExecutableDescription;
   UnicodeString UsageState;

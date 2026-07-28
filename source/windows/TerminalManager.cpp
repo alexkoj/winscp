@@ -1827,8 +1827,11 @@ void __fastcall TTerminalManager::NewSession(
         FreeAll();
       }
       TManagedTerminal * ANewSession = NewSessions(DataList.get());
-      bool AdHoc = (DataList->Count == 1) && (StoredSessions->FindSame(reinterpret_cast<TSessionData *>(DataList->Items[0])) == NULL);
-      bool CanRetry = SessionUrl.IsEmpty() && AdHoc;
+      // Retry (reopen the Login dialog) on a failed connection attempt, so the user can
+      // fix credentials or just re-read the site's Notes, without having to start over
+      // (e.g. via the Site Manager). Previously this only applied to ad-hoc (unsaved)
+      // sessions; there is no reason saved sites should not get the same chance.
+      bool CanRetry = SessionUrl.IsEmpty();
       bool ShowLoginWhenNoSession = WinConfiguration->ShowLoginWhenNoSession;
       if (CanRetry)
       {

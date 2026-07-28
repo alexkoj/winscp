@@ -40,6 +40,7 @@ __fastcall TOpenDirectoryDialog::TOpenDirectoryDialog(TComponent * AOwner):
   TForm(AOwner)
 {
   UseSystemSettings(this);
+  ApplyColorMode(this);
 
   FOperationSide = osCurrent;
   OperationSide = osLocal;

@@ -37,6 +37,7 @@ __fastcall TFileFindDialog::TFileFindDialog(TComponent * Owner)
   : TForm(Owner)
 {
   UseSystemSettings(this);
+  ApplyColorMode(this);
   FState = ffInit;
 
   FixComboBoxResizeBug(MaskEdit);

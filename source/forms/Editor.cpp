@@ -762,6 +762,7 @@ __fastcall TEditorForm::TEditorForm(TComponent* Owner)
   SelectScaledImageList(EditorImages);
 
   UseSystemSettings(this);
+  ApplyColorMode(this);
   UseDesktopFont(StatusBar);
   FixFormIcons(this);
   UsesCustomColorMode(this);

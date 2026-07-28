@@ -10,6 +10,7 @@
 #include "ProgParams.h"
 #include "Custom.h"
 #include <Vcl.Themes.hpp>
+#include <shellapi.h>
 //---------------------------------------------------------------------------
 const UnicodeString AppName = L"WinSCP";
 //---------------------------------------------------------------------------
@@ -434,21 +435,23 @@ void __fastcall ConfigureInterface()
     AdjustLocaleFlag(LoadStr(BIDI_MODE), WinConfiguration->BidiModeOverride, false, bdRightToLeft, bdLeftToRight);
   Application->BiDiMode = static_cast<TBiDiMode>(BidiModeFlag);
   SetTBXSysParam(TSP_XPVISUALSTYLE, XPVS_AUTOMATIC);
-  UnicodeString Theme = GetThemeName(WinConfiguration->UseDarkTheme());
-  if (!SameText(TBXCurrentTheme(), Theme))
-  {
-    TBXSetTheme(Theme);
-  }
   UnicodeString VclStyleName = GetVclStyleName(WinConfiguration->UseDarkTheme());
   // Switching the active VCL Style while the app is already running (live Dark/Light
-  // toggle, or system theme change while UseDarkTheme() == asAuto) corrupts TBX
-  // toolbars/menus - their custom windows do not process the VCL Styles
-  // CM_STYLECHANGED cascade correctly (this is unrelated to TBXSetTheme above, which
-  // already worked live before VCL Styles and still does). So only apply the VCL
-  // Style once, at the very first call (application startup, before any form is
-  // shown); later calls only update the TBX theme and the Tools.cpp color helpers
-  // (GetWindowColor/GetBtnFaceColor/...), same as before this change, and the VCL
-  // Style itself takes full effect after the next restart.
+  // toggle, or system theme change while UseDarkTheme() == asAuto) wrecks the layout
+  // and takes the app down with it - the TBX toolbars/menus and the docking layout do
+  // not survive the VCL Styles CM_STYLECHANGED cascade. This was tried and reverted;
+  // do not remove this guard again without solving the TBX side first.
+  //
+  // The cost of applying it only once is that the style lags the mode until the next
+  // restart: toggling Dark->Light leaves the window skinned dark. The TBX theme and the
+  // Tools.cpp color helpers (GetWindowColor/GetBtnFaceColor/...) do follow live, so
+  // toolbars/menus/panels recolor immediately either way.
+  //
+  // This must run BEFORE TBXSetTheme below: TBXOfficeXPTheme.pas's dark palette
+  // (TTBXDarkOfficeXPTheme) reads TStyleManager.ActiveStyle while computing its
+  // color cache (see ActiveVclStyleColor), so the VCL Style has to already be
+  // active by the time the TBX theme object is (re)created, or TBX bakes in its
+  // hardcoded fallback colors instead of the real style palette.
   static bool VclStyleAppliedOnce = false;
   if (!VclStyleAppliedOnce)
   {
@@ -458,13 +461,77 @@ void __fastcall ConfigureInterface()
       // No-op (returns false) if the named style is not registered/embedded yet
       // (e.g. before the .vsf resources are added to the project), so this is safe
       // to call unconditionally.
-      Vcl::Themes::TStyleManager::TrySetStyle(VclStyleName);
+      Vcl::Themes::TStyleManager::TrySetStyle(VclStyleName, false);
     }
     VclStyleAppliedOnce = true;
+  }
+  UnicodeString Theme = GetThemeName(WinConfiguration->UseDarkTheme());
+  if (!SameText(TBXCurrentTheme(), Theme))
+  {
+    TBXSetTheme(Theme);
   }
   // Has any effect on Wine only
   // (otherwise initial UserDocumentDirectory is equivalent to GetPersonalFolder())
   UserDocumentDirectory = GetPersonalFolder();
+}
+//---------------------------------------------------------------------------
+// Empty unless a restart was requested. Holds the path captured at request time, as the
+// relaunch happens after the VCL Application object is of no use anymore.
+static UnicodeString ApplicationRestartPath;
+//---------------------------------------------------------------------------
+void RestartApplicationIfRequested()
+{
+  if (!ApplicationRestartPath.IsEmpty())
+  {
+    UnicodeString Path = ApplicationRestartPath;
+    ApplicationRestartPath = EmptyStr;
+    // Called at the very end of wWinMain, after the configuration has been flushed, so
+    // that the new instance reads the settings this one has just saved.
+    ShellExecute(NULL, L"open", Path.c_str(), NULL, ExtractFilePath(Path).c_str(), SW_SHOWNORMAL);
+  }
+}
+//---------------------------------------------------------------------------
+bool ConfirmColorModeRestart()
+{
+  bool Result = true;
+  // Only the VCL Style needs a restart (it is applied once, at startup - see
+  // ConfigureInterface). Everything else about the color mode - the TBX theme, the
+  // Tools.cpp colors, the dark title bar - follows the setting immediately, so there is
+  // nothing to ask about when the style already matches.
+  UnicodeString VclStyleName = GetVclStyleName(WinConfiguration->UseDarkTheme());
+  if ((Vcl::Themes::TStyleManager::ActiveStyle != NULL) &&
+      !SameText(Vcl::Themes::TStyleManager::ActiveStyle->Name, VclStyleName))
+  {
+    TQueryButtonAlias Aliases[2];
+    Aliases[0].Button = qaYes;
+    Aliases[0].Alias = LoadStr(COLOR_MODE_RESTART_NOW);
+    Aliases[1].Button = qaNo;
+    Aliases[1].Alias = LoadStr(COLOR_MODE_RESTART_LATER);
+    TMessageParams Params;
+    Params.Aliases = Aliases;
+    Params.AliasesCount = std::size(Aliases);
+
+    unsigned int Answer =
+      MessageDialog(LoadStr(COLOR_MODE_RESTART), qtConfirmation, qaYes | qaNo | qaCancel, HELP_NONE, &Params);
+
+    if (Answer == qaYes)
+    {
+      ApplicationRestartPath = Application->ExeName;
+      // Posted, not sent: the Preferences dialog is still modal at this point, and the
+      // main form must not start closing underneath it. If the user then vetoes the
+      // close (unsaved work, open sessions), the app stays up and the relaunch simply
+      // happens whenever it is eventually closed.
+      if (Application->MainForm != NULL)
+      {
+        PostMessage(Application->MainForm->Handle, WM_CLOSE, 0, 0);
+      }
+    }
+    else if (Answer == qaCancel)
+    {
+      Result = false;
+    }
+  }
+  return Result;
 }
 //---------------------------------------------------------------------------
 void __fastcall DoAboutDialog(TConfiguration *Configuration)

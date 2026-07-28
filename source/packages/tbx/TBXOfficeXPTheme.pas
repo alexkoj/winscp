@@ -99,7 +99,22 @@ implementation
 
 uses
   TBXUtils, TB2Common, Classes, Commctrl, SysUtils,
-  Types, UITypes, UxTheme, PasTools;
+  Types, UITypes, UxTheme, PasTools, Vcl.Themes;
+
+// Whether a non-default VCL Style (see GetVclStyleName in UserInterface.cpp) is
+// active. Mirrors the equivalent C++ helper in Tools.cpp (UseVclStyleColors), so
+// that the "dark" TBX palette below (used only when FDark is true) follows the
+// same VCL Style, instead of a hardcoded generic dark gray unrelated to it.
+function ActiveVclStyleColor(StdColor: TColor; const Fallback: TColor): TColor;
+var
+  Style: TCustomStyleServices;
+begin
+  Style := TStyleManager.ActiveStyle;
+  if (Style <> nil) and not SameText(Style.Name, 'Windows') then
+    Result := Style.GetSystemColor(StdColor)
+  else
+    Result := Fallback;
+end;
 
 var
   StockImgList: TImageList;
@@ -1208,9 +1223,9 @@ begin
     end
       else
     begin
-      MenubarColor := clBlack;
-      ToolbarColor := RGB(32, 32, 32);
-      PopupColor := RGB(43, 43, 43);
+      MenubarColor := ActiveVclStyleColor(clBtnFace, clBlack);
+      ToolbarColor := ActiveVclStyleColor(clBtnFace, RGB(32, 32, 32));
+      PopupColor := ActiveVclStyleColor(clWindow, RGB(43, 43, 43));
     end;
     DockPanelColor := PopupColor;
     PopupFrameColor := Blend(clBtnText, clBtnShadow, 20);
@@ -1438,7 +1453,7 @@ begin
   begin
     if Color = clWindow then
     begin
-      Color := RGB(65, 65, 65);
+      Color := ActiveVclStyleColor(clWindow, RGB(65, 65, 65));
     end;
   end;
   Result := Color;

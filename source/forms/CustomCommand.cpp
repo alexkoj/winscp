@@ -34,6 +34,7 @@ __fastcall TCustomCommandDialog::TCustomCommandDialog(TComponent* Owner,
 {
   SetCorrectFormParent(this);
   UseSystemSettings(this);
+  ApplyColorMode(this);
   FCustomCommandList = CustomCommandList;
   FMode = Mode;
   FOnValidate = OnValidate;

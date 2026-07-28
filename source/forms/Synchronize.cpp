@@ -68,6 +68,7 @@ __fastcall TSynchronizeDialog::TSynchronizeDialog(TComponent * Owner)
   : TForm(Owner)
 {
   UseSystemSettings(this);
+  ApplyColorMode(this);
   FOptions = 0;
   FSynchronizing = false;
   FMinimizedByMe = false;

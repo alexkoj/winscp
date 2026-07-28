@@ -28,6 +28,7 @@ __fastcall TCreateDirectoryDialog::TCreateDirectoryDialog(TComponent * AOwner, i
   TForm(AOwner)
 {
   UseSystemSettings(this);
+  ApplyColorMode(this);
 
   RightsFrame->AllowAddXToDirectories = false;
   FAllowedChanges = AllowedChanges;

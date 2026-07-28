@@ -52,6 +52,7 @@ __fastcall TSynchronizeChecklistDialog::TSynchronizeChecklistDialog(
   FOnQueueSynchronize = OnQueueSynchronize;
   FToken = Token;
   UseSystemSettings(this);
+  ApplyColorMode(this);
   UseDesktopFont(ListView2);
   UseDesktopFont(StatusBar2);
   FChecklist = NULL;

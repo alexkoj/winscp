@@ -1224,6 +1224,13 @@ begin
       begin
         FParentFolder := GetShellFolder(PathName);
 
+        // Single pass over the directory for both files and subdirectories
+        // (FileAttr already matches directories/hidden/system entries too - it
+        // is a superset of DirAttrMask - the two used to be enumerated via two
+        // separate FindFirstEx/FindNext scans of the very same directory,
+        // doubling the I/O cost for every reload, which was noticeable on
+        // directories with many entries).
+        DirsCount := 0;
         DosError :=
           FindFirstEx(ApiPath(IncludeTrailingPathDelimiter(FPath) + '*.*'), FileAttr, SRec, FIND_FIRST_EX_LARGE_FETCH_PAS);
         while (DosError = 0) and (not AbortLoading) do
@@ -1234,24 +1241,8 @@ begin
             begin
               AddItem(SRec);
             end;
-          end;
-          DosError := FindNext(SRec);
-        end;
-        SysUtils.FindClose(SRec);
-
-        if AddParentDir and (not IsRoot) then
-        begin
-          AddParentDirItem;
-        end;
-
-        // Search for directories:
-        DirsCount := 0;
-        DosError :=
-          FindFirstEx(ApiPath(IncludeTrailingPathDelimiter(FPath) + '*.*'), DirAttrMask, SRec, FIND_FIRST_EX_LARGE_FETCH_PAS);
-        while (DosError = 0) and (not AbortLoading) do
-        begin
-          if (SRec.Name <> '.') and (SRec.Name <> '..') and
-             ((Srec.Attr and faDirectory) <> 0) then
+          end
+          else if (SRec.Name <> '.') and (SRec.Name <> '..') then
           begin
             Inc(DirsCount);
 
@@ -1263,6 +1254,11 @@ begin
           DosError := FindNext(SRec);
         end;
         SysUtils.FindClose(SRec);
+
+        if AddParentDir and (not IsRoot) then
+        begin
+          AddParentDirItem;
+        end;
 
         // Update TDriveView's subdir indicator:
         if Assigned(FDriveView) and (FDriveType = DRIVE_REMOTE) then
@@ -1358,6 +1354,13 @@ begin
           end;
           EItems.Sort;
 
+          // Single pass over the directory for both files and subdirectories
+          // (FileAttr already matches directories/hidden/system entries too -
+          // it is a superset of DirAttrMask). These used to be two separate
+          // FindFirstEx/FindNext scans of the very same directory, doubling
+          // the I/O cost of every refresh, which was noticeable on
+          // directories with many entries. Per-entry handling below is
+          // unchanged from the previous two loops, just merged into one scan.
           DosError :=
             FindFirstEx(ApiPath(IncludeTrailingPathDelimiter(FPath) + '*.*'), FileAttr, SRec, FIND_FIRST_EX_LARGE_FETCH_PAS);
           while DosError = 0 do
@@ -1405,32 +1408,16 @@ begin
                   FItems.Add(Srec.Name);
                 end;
               end;
-            end;
-            DosError := FindNext(Srec);
-          end;
-          SysUtils.FindClose(Srec);
-
-          // Search new directories:
-          DosError :=
-            FindFirstEx(ApiPath(FPath + '\*.*'), DirAttrMask, SRec, FIND_FIRST_EX_LARGE_FETCH_PAS);
-          while DosError = 0 do
-          begin
-            if (Srec.Attr and faDirectory) <> 0 then
+            end
+              else if (SRec.Name <> '.') and (SRec.Name <> '..') then
             begin
-              if (SRec.Name <> '.') and (SRec.Name <> '..') then
+              if not EItems.Find(SRec.Name, ItemIndex) then
               begin
-                if not EItems.Find(SRec.Name, ItemIndex) then
+                if FileMatches(SRec.Name, SRec) then
                 begin
-                  if FileMatches(SRec.Name, SRec) then
-                  begin
-                    New(PSrec);
-                    PSrec^ := SRec;
-                    NewItems.AddObject(Srec.Name, Pointer(PSrec));
-                    FItems.Add(SRec.Name);
-                  end;
-                end
-                  else
-                begin
+                  New(PSrec);
+                  PSrec^ := SRec;
+                  NewItems.AddObject(Srec.Name, Pointer(PSrec));
                   FItems.Add(SRec.Name);
                 end;
               end
@@ -1438,10 +1425,14 @@ begin
               begin
                 FItems.Add(SRec.Name);
               end;
+            end
+              else
+            begin
+              FItems.Add(SRec.Name);
             end;
-            DosError := FindNext(SRec);
+            DosError := FindNext(Srec);
           end;
-          SysUtils.FindClose(SRec);
+          SysUtils.FindClose(Srec);
 
           // Check wether displayed Items still exists:
           FItems.Sort;

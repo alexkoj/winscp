@@ -97,6 +97,7 @@ __fastcall TImportSessionsDialog::TImportSessionsDialog(TComponent * AOwner) :
   TForm(AOwner)
 {
   UseSystemSettings(this);
+  ApplyColorMode(this);
   // this is loaded from res string to force translation
   Caption = LoadStr(IMPORT_CAPTION);
 }

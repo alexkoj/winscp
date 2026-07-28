@@ -171,6 +171,9 @@ BEGIN
         EDIT_CHANGED_EXTERNALLY, "The remote file has been changed while you were editing it. Do you want to overwrite it anyway?"
         ALWAYS_RECONNECT, "&Always reconnect automatically"
         NEVER_POPUP_DISCONNECT, "&Never popup disconnect messages"
+        COLOR_MODE_RESTART, "**The new color theme cannot be applied completely while WinSCP is running.**\n \nRestart WinSCP now to apply it, keep the setting and apply it the next time WinSCP starts, or cancel to keep the current theme."
+        COLOR_MODE_RESTART_NOW, "Restart &now"
+        COLOR_MODE_RESTART_LATER, "Restart &later"
 
         WIN_INFORMATION_STRINGS, "WIN_INFORMATION"
         COMPARE_NO_DIFFERENCES, "No differences found."

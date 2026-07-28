@@ -105,6 +105,7 @@ __fastcall TGenerateUrlDialog::TGenerateUrlDialog(
   : TForm(Owner)
 {
   UseSystemSettings(this);
+  ApplyColorMode(this);
   FData = Data;
 
   if (Paths != NULL)

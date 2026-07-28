@@ -29,6 +29,7 @@ __fastcall TFileSystemInfoDialog::TFileSystemInfoDialog(TComponent * AOwner,
   : TForm(AOwner)
 {
   UseSystemSettings(this);
+  ApplyColorMode(this);
   FOnGetSpaceAvailable = OnGetSpaceAvailable;
   FSpaceAvailableLoaded = false;
   FLastListItem = 0;

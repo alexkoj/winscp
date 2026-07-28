@@ -157,30 +157,17 @@ void __fastcall TLoginDialog::InitControls()
 //---------------------------------------------------------------------
 void TLoginDialog::UpdateLoginButton()
 {
-  TAction * Action = DebugNotNull(dynamic_cast<TAction *>(LoginButton->Action));
-  int ImageIndex = Action->ImageIndex;
-  if (FButtonImagesMap.find(ImageIndex) == FButtonImagesMap.end())
-  {
-    int LoginIndex = AddLoginButtonImage(ImageIndex, true);
-    FButtonImagesMap.insert(std::make_pair(ImageIndex, LoginIndex));
-    AddLoginButtonImage(ImageIndex, false);
-  }
-
-  LoginButton->ImageIndex = FButtonImagesMap[ImageIndex];
-  LoginButton->DisabledImageIndex = FButtonImagesMap[ImageIndex] + 1;
-
-  CenterButtonImage(LoginButton);
+  // No icon on the Login/Open split button: its source PNGs are opaque
+  // (Background = clWindow, not real alpha transparency), so the old
+  // FloodFill/AddMasked trick only ever looked right against a plain white
+  // button face. Against a VCL-Styled (colored/dark) button it produced an
+  // oversized, mismatched-looking patch. The Login action's Caption already
+  // conveys the Login-vs-Open state, so the icon was decorative only -
+  // dropping it keeps a clean, theme-agnostic button.
 }
 //---------------------------------------------------------------------
 void __fastcall TLoginDialog::GenerateImages()
 {
-  // Generate button images.
-  // The button does not support alpha channel,
-  // so we have to copy the PNG's to BMP's and use plain transparent color
-  FButtonImageList.reset(new TImageList(this));
-  FButtonImageList->SetSize(ActionImageList->Width, ActionImageList->Height);
-  LoginButton->Images = FButtonImageList.get();
-  FButtonImagesMap.clear();
   UpdateLoginButton();
 
   SessionImageList->BeginUpdate();
@@ -196,36 +183,6 @@ void __fastcall TLoginDialog::GenerateImages()
   {
     SessionImageList->EndUpdate();
   }
-}
-//---------------------------------------------------------------------
-void TLoginDialog::FloodFill(TBitmap * Bitmap, int X, int Y)
-{
-  // A background is white, but there's also white used on the image itself.
-  // So we first replace the background white with a unique color,
-  // setting it as a transparent later.
-  // This is obviously a hack specific to this particular image.
-  // 16x16 version does not have any background
-  if (Bitmap->Canvas->Pixels[X][Y] == clWhite)
-  {
-    Bitmap->Canvas->FloodFill(X, Y, clWhite, fsSurface);
-  }
-}
-//---------------------------------------------------------------------
-int TLoginDialog::AddLoginButtonImage(int Index, bool Enabled)
-{
-  std::unique_ptr<TBitmap> Bitmap(new TBitmap());
-  Bitmap->SetSize(ActionImageList->Width, ActionImageList->Height);
-
-  ActionImageList->Draw(Bitmap->Canvas, 0, 0, Index, Enabled);
-
-  const TColor TransparentColor = clFuchsia;
-
-  Bitmap->Canvas->Brush->Color = TransparentColor;
-  FloodFill(Bitmap.get(), 0, 0);
-  FloodFill(Bitmap.get(), Bitmap->Width - 1, Bitmap->Height - 1);
-  FloodFill(Bitmap.get(), Bitmap->Width - 1, 0);
-
-  return FButtonImageList->AddMasked(Bitmap.get(), TransparentColor);
 }
 //---------------------------------------------------------------------
 void __fastcall TLoginDialog::Init()
@@ -3352,7 +3309,6 @@ void __fastcall TLoginDialog::FormAfterMonitorDpiChanged(TObject *, int OldDPI, 
   FBasicGroupBaseHeight = MulDiv(FBasicGroupBaseHeight, NewDPI, OldDPI);
   FNoteGroupOffset = MulDiv(FNoteGroupOffset, NewDPI, OldDPI);
   GenerateImages();
-  CenterButtonImage(LoginButton);
   AutoSizeCheckBox(ShowAgainCheck);
 }
 //---------------------------------------------------------------------------

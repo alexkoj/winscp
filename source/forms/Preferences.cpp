@@ -1008,7 +1008,15 @@ void __fastcall TPreferencesDialog::SaveConfiguration()
     BOOLPROP(CopyParamAutoSelectNotice);
 
     // interface
+    // Applied first so that everything that can follow the setting live (TBX theme,
+    // colors, dark title bar) does, and only then ask about the part that cannot - the
+    // VCL Style, which is bound at startup. Cancelling puts the previous setting back.
+    TAutoSwitch PrevDarkTheme = WinConfiguration->DarkTheme;
     WinConfiguration->DarkTheme = ComboAutoSwitchSave(ThemeCombo);
+    if ((WinConfiguration->DarkTheme != PrevDarkTheme) && !ConfirmColorModeRestart())
+    {
+      WinConfiguration->DarkTheme = PrevDarkTheme;
+    }
 
     if (GetInterface() != CustomWinConfiguration->Interface)
     {

@@ -38,6 +38,7 @@ __fastcall TSymlinkDialog::TSymlinkDialog(TComponent* Owner)
   : TForm(Owner)
 {
   UseSystemSettings(this);
+  ApplyColorMode(this);
   FSide = osLocal;
 }
 //---------------------------------------------------------------------------

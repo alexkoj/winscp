@@ -44,6 +44,7 @@ TCopyLocalDialog::TCopyLocalDialog(TComponent * Owner, bool Move, int Options)
   AutoSizeCheckBox(NeverShowAgainCheck);
 
   UseSystemSettings(this);
+  ApplyColorMode(this);
 }
 //---------------------------------------------------------------------------
 bool TCopyLocalDialog::Execute(UnicodeString & TargetDirectory, UnicodeString & FileMask, int & OutputOptions)

@@ -27,6 +27,7 @@ __fastcall TLicenseDialog::TLicenseDialog(TComponent * Owner, TLicense License)
   : TForm(Owner)
 {
   UseSystemSettings(this);
+  ApplyColorMode(this);
 
   TStrings * LicenseList = new TStringList();
   try

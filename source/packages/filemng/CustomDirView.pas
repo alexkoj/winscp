@@ -837,6 +837,14 @@ begin
 
   inherited;
 
+  // The list view already fully manages its own dark/light colors (native
+  // SetWindowTheme/AllowDarkModeForWindow dark mode plus the GetWindowColor/
+  // GetBtnFaceColor helpers) independently of VCL Styles. Letting VCL Styles
+  // ALSO style-hook the client area/border fights with that and was causing
+  // visible flicker while moving the mouse over items (two separate paint/
+  // theme mechanisms redrawing the same control). Keep only font styling.
+  StyleElements := [seFont];
+
   FWatchForChanges := False;
   ClearItemsStats;
   FDimmHiddenFiles := True;

@@ -29,6 +29,7 @@ __fastcall TSynchronizeProgressForm::TSynchronizeProgressForm(TComponent * Owner
   StartTimeLabelLabel->Visible = !KnowsTotalFiles;
   StartTimeLabel->Visible = !KnowsTotalFiles;
   UseSystemSettings(this);
+  ApplyColorMode(this);
   HideComponentsPanel(this);
   SelectScaledImageList(ImageList);
   if (!AllowMinimize)

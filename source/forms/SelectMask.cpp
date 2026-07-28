@@ -50,6 +50,7 @@ __fastcall TSelectMaskDialog::TSelectMaskDialog(TComponent * Owner) :
   TForm(Owner)
 {
   UseSystemSettings(this);
+  ApplyColorMode(this);
   FColor = TColor();
   HintLabel(HintText,
     FORMAT(L"%s\n \n%s\n \n%s\n \n%s", (LoadStr(MASK_HINT2), LoadStr(FILE_MASK_EX_HINT),

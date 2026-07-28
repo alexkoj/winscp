@@ -68,6 +68,7 @@ public:
 
 protected:
   virtual void __fastcall PaintWindow(HDC DC);
+  virtual void __fastcall WndProc(TMessage & Message);
   DYNAMIC bool __fastcall CanChange();
   DYNAMIC void __fastcall Change();
   DYNAMIC void __fastcall MouseMove(TShiftState Shift, int X, int Y);
@@ -82,16 +83,16 @@ private:
   void __fastcall DrawThemesXpTabItem(
     HDC DC, HTHEME Theme, int Item, const TRect & Rect, int State, bool Selected, TTBXTheme * ATabTheme);
   void __fastcall DrawTabItem(HDC DC, int Item, TRect Rect, int State, bool Shadowed, TTBXTheme * ATabTheme);
+  void __fastcall DrawTabButton(HDC DC, TCanvas * Canvas, int Item, int State);
+  void __fastcall DrawTabButtons(HDC DC);
   void __fastcall InvalidateTab(int Index);
   int __fastcall TabButtonSize();
-  int __fastcall GetCrossPadding();
   int __fastcall IndexOfTabButtonAt(int X, int Y);
   void __fastcall ItemContentsRect(int Item, TRect & Rect);
   bool __fastcall HasItemImage(int Item);
   void __fastcall ItemTabRect(int Item, TRect & Rect);
   TThemeTabSheetButtons __fastcall GetTabButton(int Index);
   void UpdateHotButton(int & Ref, int Index);
-  void DrawCross(HDC DC, int Width, COLORREF Color, const TRect & Rect);
   void DrawDropDown(HDC DC, int Radius, int X, int Y, COLORREF Color, int Grow);
   void __fastcall WMLButtonDown(TWMLButtonDown & Message);
   bool IsHotButton(int Index);

@@ -29,6 +29,7 @@ __fastcall TCleanupDialog::TCleanupDialog(TComponent* AOwner)
   FAnyData = false;
   FindData();
   UseSystemSettings(this);
+  ApplyColorMode(this);
 }
 //---------------------------------------------------------------------
 void __fastcall TCleanupDialog::AddLocation(int CaptionId, const UnicodeString & Location, TCleanupEvent Event)

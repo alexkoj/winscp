@@ -61,6 +61,7 @@ __fastcall TFullSynchronizeDialog::TFullSynchronizeDialog(TComponent* Owner)
   : TForm(Owner)
 {
   UseSystemSettings(this);
+  ApplyColorMode(this);
   FParams = 0;
   FSaveMode = false;
   FOptions = 0;

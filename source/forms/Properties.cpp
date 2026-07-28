@@ -75,6 +75,7 @@ __fastcall TPropertiesDialog::TPropertiesDialog(TComponent* AOwner,
   ReadOnlyControl(LinksToLabel);
   ChecksumUnknownLabel->Caption = LoadStr(PROPERTIES_CHECKSUM_UNKNOWN);
   UseSystemSettings(this);
+  ApplyColorMode(this);
   LoadInfo();
 }
 //---------------------------------------------------------------------------

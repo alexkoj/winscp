@@ -17,6 +17,7 @@ __fastcall TCustomDialog::TCustomDialog(UnicodeString AHelpKeyword)
   : TForm(GetFormOwner())
 {
   UseSystemSettings(this);
+  ApplyColorMode(this);
 
   FControlPadding = ScaleByTextHeight(this, 6);
   FPos = ScaleByTextHeight(this, 8);

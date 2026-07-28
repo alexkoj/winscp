@@ -27,6 +27,7 @@ __fastcall TEditMaskDialog::TEditMaskDialog(TComponent* Owner)
 {
   FChanging = false;
   UseSystemSettings(this);
+  ApplyColorMode(this);
   HintLabel(MaskHintText,
     FORMAT(L"%s\n \n%s\n \n%s\n \n%s", (LoadStr(MASK_HINT2), LoadStr(FILE_MASK_EX_HINT), LoadStr(PATH_MASK_HINT2), LoadStr(MASK_HELP))));
   ReadOnlyControl(MaskMemo);
