@@ -14,6 +14,7 @@
 #include "JclHookExcept.hpp"
 #include <WinApi.h>
 #include <Vcl.AppEvnts.hpp>
+#include <Vcl.Themes.hpp>
 //---------------------------------------------------------------------------
 #define WM_TRAY_ICON (WM_WINSCP_USER + 5)
 //---------------------------------------------------------------------
@@ -1181,9 +1182,23 @@ void __fastcall FixButtonImage(TButton * Button)
 //---------------------------------------------------------------------------
 void __fastcall CenterButtonImage(TButton * Button)
 {
+  // This whole centering trick (negative ImageMargins combined with caption
+  // padding) is tuned specifically for the native (UxTheme/comctl32) button
+  // paint routine used when UseThemes() is true. When a genuine VCL Style is
+  // active, the button is painted by VCL's own style-aware routine instead,
+  // where the hack misplaces the image (e.g. under the caption). VCL Styles
+  // handle image+caption layout correctly on their own, so just use plain
+  // left alignment in that case.
+  Vcl::Themes::TCustomStyleServices * ActiveStyle = Vcl::Themes::TStyleManager::ActiveStyle;
+  bool VclStyleActive = (ActiveStyle != NULL) && !SameText(ActiveStyle->Name, L"Windows");
+  if (VclStyleActive)
+  {
+    Button->ImageAlignment = Vcl::Stdctrls::iaLeft;
+    Button->ImageMargins->Left = 1;
+  }
   // with themes disabled, the text seems to be drawn over the icon,
   // so that the padding spaces hide away most of the icon
-  if (UseThemes())
+  else if (UseThemes())
   {
     Button->ImageAlignment = iaCenter;
     int ImageWidth = Button->Images->Width;

@@ -69,6 +69,7 @@ __fastcall TPreferencesDialog::TPreferencesDialog(
   FCustomCommandOptions.reset(new TStringList());
   FHideFocus = false;
   UseSystemSettings(this);
+  ApplyColorMode(this);
 
   FCustomCommandsScrollOnDragOver = new TListViewScrollOnDragOver(CustomCommandsView, true);
   FixListColumnWidth(CustomCommandsView, -1);

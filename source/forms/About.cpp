@@ -54,6 +54,7 @@ __fastcall TAboutDialog::TAboutDialog(TComponent * AOwner,
 {
   FConfiguration = Configuration;
   UseSystemSettings(this);
+  ApplyColorMode(this);
   LinkLabel(HomepageLabel, LoadStr(HOMEPAGE_URL));
   LinkLabel(ForumUrlLabel, LoadStr(FORUM_URL));
 

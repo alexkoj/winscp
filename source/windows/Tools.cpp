@@ -14,6 +14,7 @@
 #include <WinHelpViewer.hpp>
 #include <System.Win.ComObj.hpp>
 #include <ProgParams.h>
+#include <Vcl.Themes.hpp>
 //---------------------------------------------------------------------------
 // WORKAROUND
 // VCL includes wininet.h (even with NO_WIN32_LEAN_AND_MEAN) and older Windows SDKs
@@ -67,12 +68,28 @@ bool __fastcall SameFont(TFont * Font1, TFont * Font2)
     (Font1->Charset == Font2->Charset) && (Font1->Style == Font2->Style);
 }
 //---------------------------------------------------------------------------
+// Whether a non-default VCL Style (currently only used for dark mode, see
+// GetVclStyleName in UserInterface.cpp) is active. When false, all the helpers
+// below behave exactly as before the VCL Styles migration.
+static bool __fastcall UseVclStyleColors()
+{
+  Vcl::Themes::TCustomStyleServices * Style = Vcl::Themes::TStyleManager::ActiveStyle;
+  return (Style != NULL) && !SameText(Style->Name, L"Windows");
+}
+//---------------------------------------------------------------------------
 TColor __fastcall GetWindowTextColor(TColor BackgroundColor, TColor Color)
 {
   if (Color == TColor(0))
   {
-    // Could use current theme TMT_TEXTCOLOR - see https://github.com/ysc3839/win32-darkmode
-    Color = (IsDarkColor(BackgroundColor) ? clWhite : clWindowText);
+    if (UseVclStyleColors())
+    {
+      Color = Vcl::Themes::StyleServices()->GetSystemColor(clWindowText);
+    }
+    else
+    {
+      // Could use current theme TMT_TEXTCOLOR - see https://github.com/ysc3839/win32-darkmode
+      Color = (IsDarkColor(BackgroundColor) ? clWhite : clWindowText);
+    }
     SetContrast(Color, BackgroundColor, 180);
   }
   return Color;
@@ -82,14 +99,25 @@ TColor __fastcall GetWindowColor(TColor Color)
 {
   if (Color == TColor(0))
   {
-    // Could use current theme TMT_FILLCOLOR - see https://github.com/ysc3839/win32-darkmode
-    Color = (WinConfiguration->UseDarkTheme() ? static_cast<TColor>(RGB(0x20, 0x20, 0x20)) : clWindow);
+    if (UseVclStyleColors())
+    {
+      Color = Vcl::Themes::StyleServices()->GetSystemColor(clWindow);
+    }
+    else
+    {
+      // Could use current theme TMT_FILLCOLOR - see https://github.com/ysc3839/win32-darkmode
+      Color = (WinConfiguration->UseDarkTheme() ? static_cast<TColor>(RGB(0x20, 0x20, 0x20)) : clWindow);
+    }
   }
   return Color;
 }
 //---------------------------------------------------------------------------
 TColor __fastcall GetBtnFaceColor()
 {
+  if (UseVclStyleColors())
+  {
+    return Vcl::Themes::StyleServices()->GetSystemColor(clBtnFace);
+  }
   return WinConfiguration->UseDarkTheme() ? TColor(RGB(43, 43, 43)) : clBtnFace;
 }
 //---------------------------------------------------------------------------

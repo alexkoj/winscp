@@ -9,6 +9,7 @@
 #include "TerminalManager.h"
 #include "ProgParams.h"
 #include "Custom.h"
+#include <Vcl.Themes.hpp>
 //---------------------------------------------------------------------------
 const UnicodeString AppName = L"WinSCP";
 //---------------------------------------------------------------------------
@@ -375,11 +376,11 @@ void ShowExtendedExceptionEx(TTerminal * Terminal, Exception * E, bool WhileIdle
           break;
 
         case odoShutDown:
-          ShutDownWindows();
+		  ShutDownWindows();
           break;
 
         default:
-          DebugFail();
+		  DebugFail();
       }
     }
     else if (Result == qaRetry)
@@ -414,6 +415,18 @@ UnicodeString GetThemeName(bool Dark)
   return Dark ? L"DarkOfficeXP" : L"OfficeXP";
 }
 //---------------------------------------------------------------------------
+UnicodeString GetVclStyleName(bool Dark)
+{
+  // Light mode keeps the unstyled "Windows" style (pixel-identical to today's look,
+  // minimizing regression risk); only dark mode picks up the new VCL Style. This still
+  // themes the whole application, as TStyleManager propagates to every form/control
+  // application-wide the moment it is activated, with no per-form change required.
+  // Registered style names come from the project's embedded Custom_Styles entries
+  // (see WinSCP.cbproj), which use the display name baked into the .vsf, not its
+  // filename.
+  return Dark ? L"Onyx Blue" : L"Windows";
+}
+//---------------------------------------------------------------------------
 void __fastcall ConfigureInterface()
 {
   DebugAssert(WinConfiguration != NULL);
@@ -425,6 +438,29 @@ void __fastcall ConfigureInterface()
   if (!SameText(TBXCurrentTheme(), Theme))
   {
     TBXSetTheme(Theme);
+  }
+  UnicodeString VclStyleName = GetVclStyleName(WinConfiguration->UseDarkTheme());
+  // Switching the active VCL Style while the app is already running (live Dark/Light
+  // toggle, or system theme change while UseDarkTheme() == asAuto) corrupts TBX
+  // toolbars/menus - their custom windows do not process the VCL Styles
+  // CM_STYLECHANGED cascade correctly (this is unrelated to TBXSetTheme above, which
+  // already worked live before VCL Styles and still does). So only apply the VCL
+  // Style once, at the very first call (application startup, before any form is
+  // shown); later calls only update the TBX theme and the Tools.cpp color helpers
+  // (GetWindowColor/GetBtnFaceColor/...), same as before this change, and the VCL
+  // Style itself takes full effect after the next restart.
+  static bool VclStyleAppliedOnce = false;
+  if (!VclStyleAppliedOnce)
+  {
+    if ((Vcl::Themes::TStyleManager::ActiveStyle == NULL) ||
+        !SameText(Vcl::Themes::TStyleManager::ActiveStyle->Name, VclStyleName))
+    {
+      // No-op (returns false) if the named style is not registered/embedded yet
+      // (e.g. before the .vsf resources are added to the project), so this is safe
+      // to call unconditionally.
+      Vcl::Themes::TStyleManager::TrySetStyle(VclStyleName);
+    }
+    VclStyleAppliedOnce = true;
   }
   // Has any effect on Wine only
   // (otherwise initial UserDocumentDirectory is equivalent to GetPersonalFolder())
