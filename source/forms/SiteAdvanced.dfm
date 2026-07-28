@@ -70,7 +70,7 @@ object SiteAdvancedDialog: TSiteAdvancedDialog
             Top = 22
             Width = 261
             Height = 15
-            Caption = 'End-of-line &characters (if not indicated by server):'
+            Caption = 'End-&of-line characters (if not indicated by server):'
             FocusControl = EOLTypeCombo
           end
           object UtfLabel: TLabel
@@ -180,13 +180,13 @@ object SiteAdvancedDialog: TSiteAdvancedDialog
           Left = 8
           Top = 164
           Width = 438
-          Height = 93
+          Height = 73
           Anchors = [akLeft, akTop, akRight]
           Caption = 'Daylight saving time'
           TabOrder = 1
           DesignSize = (
             438
-            93)
+            73)
           object DSTModeUnixCheck: TRadioButton
             Left = 11
             Top = 23
@@ -207,20 +207,10 @@ object SiteAdvancedDialog: TSiteAdvancedDialog
             TabOrder = 1
             OnClick = DataChange
           end
-          object DSTModeKeepCheck: TRadioButton
-            Left = 11
-            Top = 69
-            Width = 418
-            Height = 17
-            Anchors = [akLeft, akTop, akRight]
-            Caption = 'Preser&ve remote timestamp'
-            TabOrder = 2
-            OnClick = DataChange
-          end
         end
         object PuttyGroup: TGroupBox
           Left = 8
-          Top = 263
+          Top = 243
           Width = 438
           Height = 103
           Anchors = [akLeft, akTop, akRight]
@@ -235,7 +225,7 @@ object SiteAdvancedDialog: TSiteAdvancedDialog
             Width = 129
             Height = 15
             Caption = '&PuTTY terminal settings:'
-            FocusControl = EncryptKeyPasswordEdit
+            FocusControl = PuttySettingsEdit
           end
           object PuttySettingsButton: TButton
             Left = 9
@@ -345,7 +335,7 @@ object SiteAdvancedDialog: TSiteAdvancedDialog
             Width = 418
             Height = 17
             Anchors = [akLeft, akTop, akRight]
-            Caption = 'Syn&chronize browsing'
+            Caption = '&Synchronize browsing'
             TabOrder = 0
           end
         end
@@ -481,8 +471,8 @@ object SiteAdvancedDialog: TSiteAdvancedDialog
           450
           388)
         object EncryptFilesCheck: TCheckBox
-          Left = 8
-          Top = 8
+          Left = 10
+          Top = 2
           Width = 438
           Height = 17
           Anchors = [akLeft, akTop, akRight]
@@ -492,7 +482,7 @@ object SiteAdvancedDialog: TSiteAdvancedDialog
         end
         object EncryptFilesGroup: TGroupBox
           Left = 8
-          Top = 31
+          Top = 25
           Width = 438
           Height = 127
           Anchors = [akLeft, akTop, akRight]
@@ -522,13 +512,14 @@ object SiteAdvancedDialog: TSiteAdvancedDialog
             OnChange = DataChange
             OnExit = EncryptKeyEditExit
           end
-          object EncryptKeyPasswordEdit: TPasswordEdit
+          object EncryptKeyPasswordEdit: TEdit
             Left = 9
             Top = 40
             Width = 420
             Height = 23
             Anchors = [akLeft, akTop, akRight]
             MaxLength = 64
+            PasswordChar = '*'
             TabOrder = 0
             Text = 'EncryptKeyPasswordEdit'
             OnChange = DataChange
@@ -642,7 +633,7 @@ object SiteAdvancedDialog: TSiteAdvancedDialog
             Top = 80
             Width = 170
             Height = 15
-            Caption = '&Canonicalize paths on the server'
+            Caption = 'Ca&nonicalize paths on the server'
             FocusControl = SFTPRealPathCombo
           end
           object SFTPMaxVersionCombo: TComboBox
@@ -1075,6 +1066,7 @@ object SiteAdvancedDialog: TSiteAdvancedDialog
             Items.Strings = (
               'af-south-1'
               'ap-east-1'
+              'ap-east-2'
               'ap-northeast-1'
               'ap-northeast-2'
               'ap-northeast-3'
@@ -1085,6 +1077,7 @@ object SiteAdvancedDialog: TSiteAdvancedDialog
               'ap-southeast-3'
               'ap-southeast-4'
               'ap-southeast-5'
+              'ap-southeast-6'
               'ap-southeast-7'
               'ca-central-1'
               'ca-west-1'
@@ -1166,7 +1159,7 @@ object SiteAdvancedDialog: TSiteAdvancedDialog
             Width = 419
             Height = 93
             Anchors = [akLeft, akTop, akRight]
-            MaxLength = 10000
+            MaxLength = 4096
             TabOrder = 0
             OnChange = DataChange
             OnKeyDown = NoteMemoKeyDown
@@ -1197,13 +1190,13 @@ object SiteAdvancedDialog: TSiteAdvancedDialog
           Left = 8
           Top = 2
           Width = 438
-          Height = 49
+          Height = 72
           Anchors = [akLeft, akTop, akRight]
           Caption = 'Protocol options'
           TabOrder = 0
           DesignSize = (
             438
-            49)
+            72)
           object WebDavLiberalEscapingCheck: TCheckBox
             Left = 11
             Top = 22
@@ -1212,6 +1205,16 @@ object SiteAdvancedDialog: TSiteAdvancedDialog
             Anchors = [akLeft, akTop, akRight]
             Caption = '&Tolerate non-encoded special characters in filenames'
             TabOrder = 0
+            OnClick = DataChange
+          end
+          object WebDavCrossDomainRedirectsCheck: TCheckBox
+            Left = 11
+            Top = 45
+            Width = 418
+            Height = 17
+            Anchors = [akLeft, akTop, akRight]
+            Caption = '&Allow redirects to other hosts'
+            TabOrder = 1
             OnClick = DataChange
           end
         end
@@ -1496,9 +1499,9 @@ object SiteAdvancedDialog: TSiteAdvancedDialog
           object ProxyHostLabel: TLabel
             Left = 9
             Top = 48
-            Width = 91
+            Width = 88
             Height = 15
-            Caption = 'Pro&xy host name:'
+            Caption = 'Pro&xy hostname:'
             FocusControl = ProxyHostEdit
           end
           object ProxyPortLabel: TLabel
@@ -1513,9 +1516,9 @@ object SiteAdvancedDialog: TSiteAdvancedDialog
           object ProxyUsernameLabel: TLabel
             Left = 9
             Top = 95
-            Width = 59
+            Width = 56
             Height = 15
-            Caption = '&User name:'
+            Caption = '&Username:'
             FocusControl = ProxyUsernameEdit
           end
           object ProxyPasswordLabel: TLabel
@@ -1575,13 +1578,14 @@ object SiteAdvancedDialog: TSiteAdvancedDialog
             Text = 'ProxyUsernameEdit'
             OnChange = DataChange
           end
-          object ProxyPasswordEdit: TPasswordEdit
+          object ProxyPasswordEdit: TEdit
             Left = 222
             Top = 113
             Width = 207
             Height = 23
             Anchors = [akLeft, akTop, akRight]
             MaxLength = 100
+            PasswordChar = '*'
             TabOrder = 6
             Text = 'ProxyPasswordEdit'
             OnChange = DataChange
@@ -1772,9 +1776,9 @@ object SiteAdvancedDialog: TSiteAdvancedDialog
           object Label6: TLabel
             Left = 9
             Top = 22
-            Width = 61
+            Width = 58
             Height = 15
-            Caption = '&Host name:'
+            Caption = '&Hostname:'
             FocusControl = TunnelHostNameEdit
           end
           object Label14: TLabel
@@ -1789,9 +1793,9 @@ object SiteAdvancedDialog: TSiteAdvancedDialog
           object Label15: TLabel
             Left = 9
             Top = 69
-            Width = 59
+            Width = 56
             Height = 15
-            Caption = '&User name:'
+            Caption = '&Username:'
             FocusControl = TunnelUserNameEdit
           end
           object Label16: TLabel
@@ -1823,13 +1827,14 @@ object SiteAdvancedDialog: TSiteAdvancedDialog
             Text = 'TunnelUserNameEdit'
             OnChange = DataChange
           end
-          object TunnelPasswordEdit: TPasswordEdit
+          object TunnelPasswordEdit: TEdit
             Left = 222
             Top = 87
             Width = 207
             Height = 23
             Anchors = [akLeft, akTop, akRight]
             MaxLength = 100
+            PasswordChar = '*'
             TabOrder = 3
             Text = 'TunnelPasswordEdit'
             OnChange = DataChange
@@ -1853,7 +1858,7 @@ object SiteAdvancedDialog: TSiteAdvancedDialog
           Width = 436
           Height = 17
           Anchors = [akLeft, akTop, akRight]
-          Caption = '&Connect through SSH tunnel'
+          Caption = 'Connect &through SSH tunnel'
           TabOrder = 0
           OnClick = DataChange
         end
@@ -2076,7 +2081,7 @@ object SiteAdvancedDialog: TSiteAdvancedDialog
             Width = 418
             Height = 17
             Anchors = [akLeft, akTop, akRight]
-            Caption = 'Enable &compression'
+            Caption = '&Enable compression'
             TabOrder = 0
             OnClick = DataChange
           end
@@ -2305,13 +2310,13 @@ object SiteAdvancedDialog: TSiteAdvancedDialog
           DesignSize = (
             438
             95)
-          object TryAgentCheck: TCheckBox
+          object TryAgentCheck2: TCheckBox
             Left = 11
             Top = 22
             Width = 416
             Height = 17
             Anchors = [akLeft, akTop, akRight]
-            Caption = 'Attempt authentication using &Pageant'
+            Caption = '&Attempt authentication using agent'
             TabOrder = 0
             OnClick = DataChange
           end
@@ -2455,7 +2460,7 @@ object SiteAdvancedDialog: TSiteAdvancedDialog
             Width = 401
             Height = 17
             Anchors = [akLeft, akTop, akRight]
-            Caption = 'Allow GSSAPI &credential delegation'
+            Caption = 'Allow GSSAPI c&redential delegation'
             TabOrder = 1
             OnClick = AuthGSSAPICheck3Click
           end
@@ -2673,51 +2678,60 @@ object SiteAdvancedDialog: TSiteAdvancedDialog
       DesignSize = (
         161
         398)
-      object NavigationTree: TTreeView
+      object NavigationPanel: TPanel
         Left = 8
         Top = 8
         Width = 151
         Height = 382
         Anchors = [akLeft, akTop, akRight, akBottom]
-        DoubleBuffered = True
-        HideSelection = False
-        HotTrack = True
-        Indent = 19
-        ParentDoubleBuffered = False
-        ReadOnly = True
-        ShowButtons = False
-        ShowRoot = False
+        BevelOuter = bvNone
         TabOrder = 0
-        OnChange = NavigationTreeChange
-        OnCollapsing = NavigationTreeCollapsing
-        Items.NodeData = {
-          030400000036000000000000000000000000000000FFFFFFFF00000000000000
-          0008000000010C45006E007600690072006F006E006D0065006E007400580036
-          000000000000000000000000000000FFFFFFFF00000000000000000000000001
-          0C4400690072006500630074006F007200690065007300580036000000000000
-          000000000000000000FFFFFFFF000000000000000000000000010C5200650063
-          00790063006C0065002000620069006E005800340000000000000000000000FF
-          FFFFFFFFFFFFFF000000000000000000000000010B45006E0063007200790070
-          00740069006F006E00580028000000000000000000000000000000FFFFFFFF00
-          0000000000000000000000010553004600540050005800260000000000000000
-          00000000000000FFFFFFFF000000000000000000000000010453004300500058
-          00260000000000000000000000FFFFFFFFFFFFFFFF0000000000000000000000
-          000104460054005000580024000000000000000000000000000000FFFFFFFF00
-          000000000000000000000001035300330058002C0000000000000000000000FF
-          FFFFFFFFFFFFFF00000000000000000000000001075700650062004400410056
-          00580034000000000000000000000000000000FFFFFFFF000000000000000002
-          000000010B43006F006E006E0065006300740069006F006E0058002A00000000
-          0000000000000000000000FFFFFFFF0000000000000000000000000106500072
-          006F007800790058002C000000000000000000000000000000FFFFFFFF000000
-          0000000000000000000107540075006E006E0065006C00580026000000000000
-          000000000000000000FFFFFFFF00000000000000000300000001045300530048
-          00580038000000000000000000000000000000FFFFFFFF000000000000000000
-          000000010D4B00650078002000650078006300680061006E006700650058003C
-          000000000000000000000000000000FFFFFFFF00000000000000000000000001
-          0F410075007400680065006E007400690063006100740069006F006E00580028
-          000000000000000000000000000000FFFFFFFF00000000000000000000000001
-          054200750067007300580028000000000000000000000000000000FFFFFFFF00
-          000000000000000000000001054E006F00740065005800}
+        object NavigationTree: TTreeView
+          Left = 0
+          Top = 0
+          Width = 151
+          Height = 382
+          Align = alClient
+          DoubleBuffered = True
+          HideSelection = False
+          HotTrack = True
+          Indent = 19
+          ParentDoubleBuffered = False
+          ReadOnly = True
+          ShowButtons = False
+          ShowRoot = False
+          TabOrder = 0
+          OnChange = NavigationTreeChange
+          OnCollapsing = NavigationTreeCollapsing
+          Items.NodeData = {
+            030400000036000000000000000000000000000000FFFFFFFF00000000000000
+            0008000000010C45006E007600690072006F006E006D0065006E007400580036
+            000000000000000000000000000000FFFFFFFF00000000000000000000000001
+            0C4400690072006500630074006F007200690065007300580036000000000000
+            000000000000000000FFFFFFFF000000000000000000000000010C5200650063
+            00790063006C0065002000620069006E005800340000000000000000000000FF
+            FFFFFFFFFFFFFF000000000000000000000000010B45006E0063007200790070
+            00740069006F006E00580028000000000000000000000000000000FFFFFFFF00
+            0000000000000000000000010553004600540050005800260000000000000000
+            00000000000000FFFFFFFF000000000000000000000000010453004300500058
+            00260000000000000000000000FFFFFFFFFFFFFFFF0000000000000000000000
+            000104460054005000580024000000000000000000000000000000FFFFFFFF00
+            000000000000000000000001035300330058002C0000000000000000000000FF
+            FFFFFFFFFFFFFF00000000000000000000000001075700650062004400410056
+            00580034000000000000000000000000000000FFFFFFFF000000000000000002
+            000000010B43006F006E006E0065006300740069006F006E0058002A00000000
+            0000000000000000000000FFFFFFFF0000000000000000000000000106500072
+            006F007800790058002C000000000000000000000000000000FFFFFFFF000000
+            0000000000000000000107540075006E006E0065006C00580026000000000000
+            000000000000000000FFFFFFFF00000000000000000300000001045300530048
+            00580038000000000000000000000000000000FFFFFFFF000000000000000000
+            000000010D4B00650078002000650078006300680061006E006700650058003C
+            000000000000000000000000000000FFFFFFFF00000000000000000000000001
+            0F410075007400680065006E007400690063006100740069006F006E00580028
+            000000000000000000000000000000FFFFFFFF00000000000000000000000001
+            054200750067007300580028000000000000000000000000000000FFFFFFFF00
+            000000000000000000000001054E006F00740065005800}
+        end
       end
     end
   end
