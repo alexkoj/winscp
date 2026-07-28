@@ -21,16 +21,17 @@ if "%PROCESSOR_ARCHITECTURE%"=="x86" (
   exit /B 1
 )
 
-set BDS=%PROGRAMFILES32%\Embarcadero\Studio\22.0
+set BDS=%PROGRAMFILES32%\Embarcadero\Studio\37.0
 
-set VS_PATH_REL=Microsoft Visual Studio\2022
 set MSBUILD_REL=MSBuild\Current\Bin\MSBuild.exe
+rem Visual Studio 2022 Build Tools (this machine, has real v143 platform toolset)
+set MSBUILD_VS2022=%PROGRAMFILES32%\Microsoft Visual Studio\2022\BuildTools\%MSBUILD_REL%
+set MSBUILD=%MSBUILD_VS2022%
 rem Visual Studio Community 2022 (development machine)
-set MSBUILD_COMMUNITY=%PROGRAMFILES64%\%VS_PATH_REL%\Community\%MSBUILD_REL%
-set MSBUILD=%MSBUILD_COMMUNITY%
-rem Visual Studio 2022 Build Tools (build server)
-if not exist "%MSBUILD%" set MSBUILD=%PROGRAMFILES32%\%VS_PATH_REL%\BuildTools\%MSBUILD_REL%
-if not exist "%MSBUILD%" echo Cannot find MSBUILD (%MSBUILD%, %MSBUILD_COMMUNITY%), install Build Tools for Visual Studio 2022 & exit /B 1
+if not exist "%MSBUILD%" set MSBUILD=%PROGRAMFILES64%\Microsoft Visual Studio\2022\Community\%MSBUILD_REL%
+rem Visual Studio Build Tools 2026 (fallback, may lack v143 platform toolset)
+if not exist "%MSBUILD%" set MSBUILD=J:\Microsoft Visual Studio\18\BuildTools\%MSBUILD_REL%
+if not exist "%MSBUILD%" echo Cannot find MSBUILD (tried %MSBUILD_VS2022%), install Build Tools for Visual Studio 2022 & exit /B 1
 
 set WITH_DOTNET=1
 if "%BUILD_TARGET%"=="" set BUILD_TARGET=Build

@@ -7,11 +7,17 @@
         <FrameworkType>None</FrameworkType>
         <Base>True</Base>
         <Platform Condition="'$(Platform)'==''">Win32</Platform>
-        <TargetedPlatforms>3</TargetedPlatforms>
+        <TargetedPlatforms>1048579</TargetedPlatforms>
         <AppType>Package</AppType>
         <CC_Suffix Condition="'$(CC_Suffix)'==''">c</CC_Suffix>
+        <ProjectName Condition="'$(ProjectName)'==''">My</ProjectName>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win64x' and '$(Base)'=='true') or '$(Base_Win64x)'!=''">
+        <Base_Win64x>true</Base_Win64x>
+        <CfgParent>Base</CfgParent>
         <Base>true</Base>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Config)'=='Debug' or '$(Cfg_1)'!=''">
@@ -41,7 +47,7 @@
         <DCC_UNSAFE_TYPE>true</DCC_UNSAFE_TYPE>
         <Defines>UNICODE;$(Defines)</Defines>
         <FinalOutputDir>$(INTERM_PATH)\$(Platform)\$(Config)</FinalOutputDir>
-        <ILINK_Description>Martin's components</ILINK_Description>
+        <ILINK_Description>Martin&apos;s components</ILINK_Description>
         <ILINK_GenerateImportLibrary>true</ILINK_GenerateImportLibrary>
         <ILINK_GenerateLibFile>true</ILINK_GenerateLibFile>
         <ILINK_LibraryPath>packages\my\;$(ILINK_LibraryPath)</ILINK_LibraryPath>
@@ -53,6 +59,12 @@
         <SanitizedProjectName>My</SanitizedProjectName>
         <TLIB_PageSize>64</TLIB_PageSize>
         <VerInfo_Locale>1033</VerInfo_Locale>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Base_Win64x)'!=''">
+        <BT_BuildType>Debug</BT_BuildType>
+        <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
+        <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <BCC_EnableBatchCompilation>true</BCC_EnableBatchCompilation>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1)'!=''">
         <BCC_DebugLineNumbers>true</BCC_DebugLineNumbers>
@@ -170,6 +182,7 @@
             <Platforms>
                 <Platform value="Win32">True</Platform>
                 <Platform value="Win64">True</Platform>
+                <Platform value="Win64x">True</Platform>
             </Platforms>
         </BorlandProject>
         <ProjectFileVersion>12</ProjectFileVersion>

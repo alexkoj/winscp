@@ -1,11 +1,15 @@
 //---------------------------------------------------------------------------
+// Must be included before WinPCH.h/DragDrop.hpp, whose "using namespace Dragdrop"
+// makes Dragdrop::IDataObject ambiguous with the global COM IDataObject that
+// mshtmhst.h references unqualified.
+#include <mshtmhst.h>
+
 #include <WinPCH.h>
 #pragma hdrstop
 
 #include "GUITools.h"
 
 #include <shlobj.h>
-#include <mshtmhst.h>
 
 #include <SessionData.h>
 #include <TBXUtils.hpp>
@@ -1492,7 +1496,7 @@ protected:
     return E_NOTIMPL;
   }
 
-  virtual HRESULT STDMETHODCALLTYPE FilterDataObject(IDataObject *, IDataObject **)
+  virtual HRESULT STDMETHODCALLTYPE FilterDataObject(::IDataObject *, ::IDataObject **)
   {
     return E_NOTIMPL;
   }

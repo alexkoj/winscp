@@ -759,7 +759,7 @@ void __fastcall TUnixDirView::SetPath(UnicodeString Value)
 #ifndef DESIGN_ONLY
 #define COMPARE_NUMBER(Num1, Num2) ( Num1 < Num2 ? -1 : ( Num1 > Num2 ? 1 : 0) )
 //---------------------------------------------------------------------------
-int __stdcall CompareFile(INT_PTR AItem1, INT_PTR AItem2, INT_PTR ADirView)
+int __stdcall CompareFile(int AItem1, int AItem2, int ADirView)
 {
   TListItem * Item1 = reinterpret_cast<TListItem *>(AItem1);
   TListItem * Item2 = reinterpret_cast<TListItem *>(AItem2);

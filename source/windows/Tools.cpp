@@ -16,41 +16,20 @@
 #include <ProgParams.h>
 //---------------------------------------------------------------------------
 // WORKAROUND
-// VCL includes wininet.h (even with NO_WIN32_LEAN_AND_MEAN)
-// and it cannot be combined with winhttp.h as of current Windows SDK.
-// This is hack to allow that.
+// VCL includes wininet.h (even with NO_WIN32_LEAN_AND_MEAN) and older Windows SDKs
+// could not combine it with winhttp.h, as both redefined URL_COMPONENTS/HTTP_VERSION_INFO/
+// INTERNET_SCHEME independently. The SDK bundled with RAD Studio 13 guards these types with
+// shared header guards (_URL_COMPONENTS_/_HTTP_VERSION_INFO_/_INTERNET_SCHEME_) between
+// wininet.h and winhttp.h, so winhttp.h now safely reuses wininet.h's definitions and no
+// renaming is needed (renaming used to work around:
 // https://web.archive.org/web/20140612011622/https://social.msdn.microsoft.com/Forums/windowsdesktop/en-US/8f468d9f-3f15-452c-803d-fc63ab3f684e/cannot-use-both-winineth-and-winhttph
+// but now breaks newer winhttp.h members, e.g. WINHTTP_PROXY_RESULT_ENTRY::ProxyScheme,
+// that reuse the unrenamed INTERNET_SCHEME from wininet.h).
 #undef BOOLAPI
 #undef SECURITY_FLAG_IGNORE_CERT_DATE_INVALID
 #undef SECURITY_FLAG_IGNORE_CERT_CN_INVALID
 
-#define URL_COMPONENTS URL_COMPONENTS_ANOTHER
-#define URL_COMPONENTSW URL_COMPONENTSW_ANOTHER
-
-#define LPURL_COMPONENTS LPURL_COMPONENTS_ANOTHER
-#define LPURL_COMPONENTSW LPURL_COMPONENTS_ANOTHER
-
-#define INTERNET_SCHEME INTERNET_SCHEME_ANOTHER
-#define LPINTERNET_SCHEME LPINTERNET_SCHEME_ANOTHER
-
-#define HTTP_VERSION_INFO HTTP_VERSION_INFO_ANOTHER
-#define LPHTTP_VERSION_INFO LPHTTP_VERSION_INFO_ANOTHER
-
 #include <winhttp.h>
-
-#undef URL_COMPONENTS
-#undef URL_COMPONENTSA
-#undef URL_COMPONENTSW
-
-#undef LPURL_COMPONENTS
-#undef LPURL_COMPONENTSA
-#undef LPURL_COMPONENTSW
-
-#undef INTERNET_SCHEME
-#undef LPINTERNET_SCHEME
-
-#undef HTTP_VERSION_INFO
-#undef LPHTTP_VERSION_INFO
 //---------------------------------------------------------------------------
 TFontStyles __fastcall IntToFontStyles(int value)
 {

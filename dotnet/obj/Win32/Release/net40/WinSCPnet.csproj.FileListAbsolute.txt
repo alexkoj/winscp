@@ -1,0 +1,3 @@
+F:\DevProject\winscp\dotnet\obj\Win32\Release\net40\WinSCPnet.csproj.AssemblyReference.cache
+F:\DevProject\winscp\dotnet\obj\Win32\Release\net40\WinSCPnet.GeneratedMSBuildEditorConfig.editorconfig
+F:\DevProject\winscp\dotnet\obj\Win32\Release\net40\WinSCPnet.csproj.CoreCompileInputs.cache

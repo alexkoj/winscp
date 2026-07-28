@@ -1,16 +1,22 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
         <ProjectGuid>{F3609D87-2D06-465B-8878-353EAF3E894F}</ProjectGuid>
-        <ProjectVersion>19.5</ProjectVersion>
+        <ProjectVersion>20.4</ProjectVersion>
         <Config Condition="'$(Config)'==''">Release</Config>
         <FrameworkType>None</FrameworkType>
         <Base>True</Base>
         <Platform Condition="'$(Platform)'==''">Win32</Platform>
-        <TargetedPlatforms>3</TargetedPlatforms>
+        <TargetedPlatforms>1048579</TargetedPlatforms>
         <AppType>StaticLibrary</AppType>
         <CC_Suffix Condition="'$(CC_Suffix)'==''">c</CC_Suffix>
+        <ProjectName Condition="'$(ProjectName)'==''">ScpResources</ProjectName>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win64x' and '$(Base)'=='true') or '$(Base_Win64x)'!=''">
+        <Base_Win64x>true</Base_Win64x>
+        <CfgParent>Base</CfgParent>
         <Base>true</Base>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Config)'=='Debug' or '$(Cfg_1)'!=''">
@@ -47,6 +53,9 @@
         <TLIB_PageSize>64</TLIB_PageSize>
         <VerInfo_Locale>1033</VerInfo_Locale>
     </PropertyGroup>
+    <PropertyGroup Condition="'$(Base_Win64x)'!=''">
+        <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;$(DCC_Namespace)</DCC_Namespace>
+    </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1)'!=''">
         <BCC_DebugLineNumbers>true</BCC_DebugLineNumbers>
         <BCC_DisableOptimizations>true</BCC_DisableOptimizations>
@@ -78,7 +87,6 @@
             <DependentOn>forms\Animations120.h</DependentOn>
             <BuildOrder>3</BuildOrder>
         </CppCompile>
-        <FormResources Include="forms\Animations120.dfm"/>
         <CppCompile Include="forms\Animations144.cpp">
             <Form>Animations144Module</Form>
             <FormType>dfm</FormType>
@@ -86,7 +94,6 @@
             <DependentOn>forms\Animations144.h</DependentOn>
             <BuildOrder>2</BuildOrder>
         </CppCompile>
-        <FormResources Include="forms\Animations144.dfm"/>
         <CppCompile Include="forms\Animations192.cpp">
             <Form>Animations192Module</Form>
             <FormType>dfm</FormType>
@@ -94,7 +101,6 @@
             <DependentOn>forms\Animations192.h</DependentOn>
             <BuildOrder>8</BuildOrder>
         </CppCompile>
-        <FormResources Include="forms\Animations192.dfm"/>
         <CppCompile Include="forms\Animations96.cpp">
             <Form>Animations96Module</Form>
             <FormType>dfm</FormType>
@@ -102,7 +108,6 @@
             <DependentOn>forms\Animations96.h</DependentOn>
             <BuildOrder>5</BuildOrder>
         </CppCompile>
-        <FormResources Include="forms\Animations96.dfm"/>
         <CppCompile Include="forms\Glyphs.cpp">
             <Form>GlyphsModule</Form>
             <FormType>dfm</FormType>
@@ -110,7 +115,6 @@
             <DependentOn>forms\Glyphs.h</DependentOn>
             <BuildOrder>0</BuildOrder>
         </CppCompile>
-        <FormResources Include="forms\Glyphs.dfm"/>
         <CppCompile Include="forms\Glyphs120.cpp">
             <Form>Glyphs120Module</Form>
             <FormType>dfm</FormType>
@@ -118,7 +122,6 @@
             <DependentOn>forms\Glyphs120.h</DependentOn>
             <BuildOrder>7</BuildOrder>
         </CppCompile>
-        <FormResources Include="forms\Glyphs120.dfm"/>
         <CppCompile Include="forms\Glyphs144.cpp">
             <Form>Glyphs144Module</Form>
             <FormType>dfm</FormType>
@@ -126,7 +129,6 @@
             <DependentOn>forms\Glyphs144.h</DependentOn>
             <BuildOrder>8</BuildOrder>
         </CppCompile>
-        <FormResources Include="forms\Glyphs144.dfm"/>
         <CppCompile Include="forms\Glyphs192.cpp">
             <Form>Glyphs192Module</Form>
             <FormType>dfm</FormType>
@@ -134,7 +136,18 @@
             <DependentOn>forms\Glyphs192.h</DependentOn>
             <BuildOrder>9</BuildOrder>
         </CppCompile>
+        <PCHCompile Include="forms\ResourcesPCH.h">
+            <BuildOrder>8</BuildOrder>
+            <PCH>true</PCH>
+        </PCHCompile>
+        <FormResources Include="forms\Glyphs120.dfm"/>
+        <FormResources Include="forms\Glyphs144.dfm"/>
         <FormResources Include="forms\Glyphs192.dfm"/>
+        <FormResources Include="forms\Glyphs.dfm"/>
+        <FormResources Include="forms\Animations120.dfm"/>
+        <FormResources Include="forms\Animations144.dfm"/>
+        <FormResources Include="forms\Animations192.dfm"/>
+        <FormResources Include="forms\Animations96.dfm"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
@@ -146,10 +159,6 @@
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>
         </BuildConfiguration>
-        <PCHCompile Include="forms\ResourcesPCH.h">
-            <BuildOrder>8</BuildOrder>
-            <PCH>true</PCH>
-        </PCHCompile>
     </ItemGroup>
     <ProjectExtensions>
         <Borland.Personality>CPlusPlusBuilder.Personality.12</Borland.Personality>
@@ -166,6 +175,7 @@
             <Platforms>
                 <Platform value="Win32">True</Platform>
                 <Platform value="Win64">True</Platform>
+                <Platform value="Win64x">True</Platform>
             </Platforms>
         </BorlandProject>
         <ProjectFileVersion>12</ProjectFileVersion>

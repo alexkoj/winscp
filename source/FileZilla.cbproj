@@ -1,14 +1,15 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
         <ProjectGuid>{152D1B4E-7546-4C2B-80C5-F0D9D5F6D9D7}</ProjectGuid>
-        <ProjectVersion>19.5</ProjectVersion>
+        <ProjectVersion>20.4</ProjectVersion>
         <Config Condition="'$(Config)'==''">Release</Config>
         <FrameworkType>None</FrameworkType>
         <Base>True</Base>
         <Platform Condition="'$(Platform)'==''">Win32</Platform>
-        <TargetedPlatforms>3</TargetedPlatforms>
+        <TargetedPlatforms>1048579</TargetedPlatforms>
         <AppType>StaticLibrary</AppType>
         <CC_Suffix Condition="'$(CC_Suffix)'==''">c</CC_Suffix>
+        <ProjectName Condition="'$(ProjectName)'==''">FileZilla</ProjectName>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
         <Base>true</Base>
@@ -98,6 +99,10 @@
             <DependentOn>filezilla\FileZillaIntf.h</DependentOn>
             <BuildOrder>9</BuildOrder>
         </CppCompile>
+        <PCHCompile Include="filezilla\FileZillaPCH.h">
+            <BuildOrder>16</BuildOrder>
+            <PCH>true</PCH>
+        </PCHCompile>
         <CppCompile Include="filezilla\FtpControlSocket.cpp">
             <BuildOrder>10</BuildOrder>
         </CppCompile>
@@ -133,10 +138,6 @@
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>
         </BuildConfiguration>
-        <PCHCompile Include="filezilla\FileZillaPCH.h">
-            <BuildOrder>16</BuildOrder>
-            <PCH>true</PCH>
-        </PCHCompile>
     </ItemGroup>
     <ProjectExtensions>
         <Borland.Personality>CPlusPlusBuilder.Personality.12</Borland.Personality>
@@ -153,6 +154,7 @@
             <Platforms>
                 <Platform value="Win32">True</Platform>
                 <Platform value="Win64">True</Platform>
+                <Platform value="Win64x">True</Platform>
             </Platforms>
         </BorlandProject>
         <ProjectFileVersion>12</ProjectFileVersion>
