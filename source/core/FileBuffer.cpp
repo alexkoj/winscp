@@ -68,7 +68,10 @@ DWORD __fastcall TFileBuffer::ReadStream(TStream * Stream, const DWORD Len, bool
     }
     else
     {
-      Result = Stream->Read(GetPointer(), Len);
+      // Explicit cast to disambiguate between TStream::Read(void *, LongInt) and,
+      // on Win64, the additional TStream::Read(void *, NativeInt) overload (DWORD
+      // converts to either equally well, so the call is otherwise ambiguous).
+      Result = Stream->Read(GetPointer(), static_cast<int>(Len));
     }
     ProcessRead(Len, Result);
   }

@@ -383,7 +383,6 @@ object LoginDialog: TLoginDialog
           Top = 17
           Width = 375
           Height = 52
-          TabStop = False
           Anchors = [akLeft, akTop, akRight, akBottom]
           BevelInner = bvNone
           BevelOuter = bvNone
@@ -392,6 +391,7 @@ object LoginDialog: TLoginDialog
             'NoteMemo')
           ScrollBars = ssVertical
           TabOrder = 0
+          OnChange = DataChange
         end
       end
     end

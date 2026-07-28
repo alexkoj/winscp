@@ -138,7 +138,6 @@ void __fastcall TLoginDialog::InitControls()
 
   ReadOnlyControl(TransferProtocolView);
   ReadOnlyControl(EncryptionView);
-  ReadOnlyControl(NoteMemo);
 
   MenuButton(ToolsMenuButton);
   MenuButton(ManageButton);
@@ -545,7 +544,7 @@ void __fastcall TLoginDialog::LoadSession(TSessionData * SessionData)
     S3ProfileCombo->Text = DefaultStr(SessionData->S3Profile, GetS3GeneralName());
     UpdateS3Credentials();
 
-    NoteGroup->Visible = !Trim(SessionData->Note).IsEmpty();
+    NoteGroup->Visible = Editable || !Trim(SessionData->Note).IsEmpty();
     NoteMemo->Lines->Text = SessionData->Note;
 
     // just in case TransferProtocolComboChange is not triggered
@@ -613,6 +612,10 @@ void __fastcall TLoginDialog::SaveSession(TSessionData * SessionData)
   // Though now we parse the hostname right on this dialog (see HostNameEditExit), this is unlikely to ever be triggered.
   SessionData->HostName = HostNameEdit->Text.Trim();
   SessionData->Ftps = GetFtps();
+  if (IsEditable())
+  {
+    SessionData->Note = NoteMemo->Lines->Text;
+  }
 
   TSessionData * EditingSessionData = GetEditingSessionData();
   SessionData->Name =
@@ -694,6 +697,7 @@ void __fastcall TLoginDialog::UpdateControls()
     TransferProtocolView->Visible = !TransferProtocolCombo->Visible;
     ReadOnlyControl(HostNameEdit, !Editable);
     ReadOnlyControl(PortNumberEdit, !Editable);
+    ReadOnlyControl(NoteMemo, !Editable);
     PortNumberEdit->ButtonsVisible = Editable;
     // FSessionData may be NULL temporary even when Editable while switching nodes
     bool S3CredentialsEnv = S3Protocol && S3CredentialsEnvCheck3->Checked;

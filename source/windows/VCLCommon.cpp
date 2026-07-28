@@ -470,8 +470,11 @@ void __fastcall DoReadOnlyControl(TControl * Control, bool ReadOnly, bool Color)
       {
         Edit->Color = DarkMode ? GetWindowColor() : clWindow;
       }
-      // not supported atm, we need to persist previous value of WantReturns
-      DebugAssert(Memo == NULL);
+      if (Memo != NULL)
+      {
+        // Undo what was done above when ReadOnly was set (WantReturns is true by default).
+        Memo->WantReturns = true;
+      }
 
       if ((Edit->PopupMenu != NULL) && (Edit->PopupMenu->Owner == Edit))
       {
